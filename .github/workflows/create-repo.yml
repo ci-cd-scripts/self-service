@@ -66,7 +66,7 @@ jobs:
       - name: Configure GitHub repo
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.ORG_TOKEN }}
+          github-token: ${{ secrets.caller-token }}
           script: |
             // Set vars for this step
             let repoName = "${{ inputs.repoName }}"
