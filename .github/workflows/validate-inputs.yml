@@ -100,7 +100,7 @@ jobs:
 
             function teamMember(teamSlug) {
               try {
-                octokit.rest.teams.getMembershipForUserInOrg({
+                github.rest.teams.getMembershipForUserInOrg({
                   org: context.payload.organization.login,
                   team_slug: teamSlug,
                   username: context.payload.sender.login,
