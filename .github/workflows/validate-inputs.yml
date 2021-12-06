@@ -87,7 +87,7 @@ jobs:
             function teamExists(teamSlug) {
               console.log("Team: [" + teamSlug + "]")
               try {
-                github.rest.teams.getByName({
+                await github.rest.teams.getByName({
                   "org": context.payload.organization.login,
                   "team_slug": teamSlug
                 })
@@ -100,7 +100,7 @@ jobs:
 
             function teamMember(teamSlug) {
               try {
-                github.rest.teams.getMembershipForUserInOrg({
+                await github.rest.teams.getMembershipForUserInOrg({
                   org: context.payload.organization.login,
                   team_slug: teamSlug,
                   username: context.payload.sender.login,
@@ -126,10 +126,10 @@ jobs:
 
             // SENDER IS IN ADMIN TEAM
             if (!slugs.filter(e => e.endsWith('-admin')).some(e => teamMember(e))) {
-              throw new Error(`User is not a member of any admin teams`);
+              core.setFailed(`User is not a member of any admin teams`);
             }
 
             // EACH TEAM EXISTS
             if (!slugs.every(e => teamExists(e))) {
-              throw new Error(`Not all teams entered are valid`);
+              core.setFailed(`Not all teams entered are valid`);
             }
