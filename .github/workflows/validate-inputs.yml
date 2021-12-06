@@ -1,0 +1,135 @@
+name: Validate Inputs
+
+on:
+  # Allows you to reuse this workflow from other workflows
+  workflow_call:
+    inputs:
+      repoName:
+        description: 'Repository Name'
+        required: true
+        type: string  # Can be: [boolean,number,string]
+      envName:
+        description: 'Environment Name'
+        required: true
+        type: string
+      templateRepo:
+        description: 'Template repo to use'
+        required: false
+        type: string
+      teams:
+        description: 'Comma-separated list of team-slugs'
+        required: true
+        default: org-admin
+        type: string
+      enableIssue:
+        description: 'Enable Repo Issues?'
+        required: true
+        type: string
+      enableProject:
+        description: 'Enable Repo Projects?'
+        required: true
+        type: string
+      enableSquashMerge:
+        description: 'Enable Repo Squash Merging?'
+        required: true
+        type: string
+      enableForking:
+        description: 'Enable Repo Forking?'
+        required: true
+        type: string
+    secrets:
+      caller-token:
+        required: true
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+        GITHUB_INPUTS: ${{ toJson(inputs) }}
+      run: |
+        echo "GITHUB_CONTEXT:"
+        echo "$GITHUB_CONTEXT"
+        echo "GITHUB_INPUTS:"
+        echo "$GITHUB_INPUTS"
+    - name: Print workflow inputs
+      run: |
+        echo "repoName: [${{ inputs.repoName }}]"
+        echo "env: [${{ inputs.envName }}]"
+        echo "templateRepo: [${{ inputs.templateRepo }}]"
+        echo "teams: [${{ inputs.teams }}]"
+        echo "enableIssue: [${{ inputs.enableIssue }}]"
+        echo "enableProject: [${{ inputs.enableProject }}]"
+        echo "enableSquashMerge: [${{ inputs.enableSquashMerge }}]"
+        echo "enableForking: [${{ inputs.enableForking }}]"
+
+  validate-inputs:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.envName }}
+    steps:
+      - name: Configure GitHub repo
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.caller-token }}
+          script: |
+            // Set vars for this step
+            let repoName = "${{ inputs.repoName }}"
+            let teams = "${{ inputs.teams }}".trim()
+            let templateRepo = "${{ inputs.templateRepo }}"
+            let enableIssue = ${{ inputs.enableIssue }}
+            let enableProject = ${{ inputs.enableProject }}
+            let enableSquashMerge = ${{ inputs.enableSquashMerge }}
+            let enableForking = ${{ inputs.enableForking }}
+            let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
+
+            function teamExists(teamSlug) {
+              console.log("Team: [" + teamSlug + "]")
+              try {
+                github.rest.teams.getByName({
+                  "org": context.payload.organization.login,
+                  "team_slug": teamSlug
+                })
+              } catch(err) {
+                console.log(`Team: [${teamSlug}] does not exist: ${err}`)
+                return false
+              }
+              return true
+            }
+
+            function teamMember(teamSlug) {
+              try {
+                octokit.rest.teams.getMembershipForUserInOrg({
+                  org: context.payload.organization.login,
+                  team_slug: teamSlug,
+                  username: context.payload.sender.login,
+                })
+              } catch(err) {
+                console.log(`Not a member of [${teamSlug}]: ${err}`)
+                return false
+              }
+              return true
+            }
+
+            function teamSlugs(team) {
+              var teamSlug = team.trim().replace(/\s+/g, '-').toLowerCase()
+              if (teamAccessOptions.some(e => teamSlug.endsWith(e))) {
+                return teamSlug
+              } else {
+                return teamAccessOptions.map(e => teamSlug + '-' + e);
+              }
+            }
+
+            // FORMAT STANDARDIZED TEAM SLUGS
+            const slugs = teams.split(",").filter(e => e.trim()).flatMap(e => teamSlugs(e))
+
+            // SENDER IS IN ADMIN TEAM
+            if (!slugs.filter(e => e.endsWith('-admin')).some(e => teamMember(e))) {
+              throw new Error(`User is not a member of any admin teams`);
+            }
+
+            // EACH TEAM EXISTS
+            if (!slugs.every(e => teamExists(e))) {
+              throw new Error(`Not all teams entered are valid`);
+            }

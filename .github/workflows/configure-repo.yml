@@ -1,0 +1,189 @@
+name: Configure repository
+
+on:
+  # Allows you to reuse this workflow from other workflows
+  workflow_call:
+    inputs:
+      repoName:
+        description: 'Repository Name'
+        required: true
+        type: string  # Can be: [boolean,number,string]
+      envName:
+        description: 'Environment Name'
+        required: true
+        type: string
+      teams:
+        description: 'Comma-separated list of team-slugs'
+        required: true
+        default: org-admin
+        type: string
+      enableIssue:
+        description: 'Enable Repo Issues?'
+        required: true
+        type: string
+      enableProject:
+        description: 'Enable Repo Projects?'
+        required: true
+        type: string
+      enableSquashMerge:
+        description: 'Enable Repo Squash Merging?'
+        required: true
+        type: string
+      enableForking:
+        description: 'Enable Repo Forking?'
+        required: true
+        type: string
+    secrets:
+      caller-token:
+        required: true
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      repoName:
+        description: 'Repository Name'
+        required: true
+      envName:
+        description: 'Environment Name'
+        required: true
+      teams:
+        description: 'Comma-separated list of team-slugs'
+        required: true
+        default: org-admin
+      enableIssue:
+        description: 'Enable Repo Issues?'
+        required: true
+      enableProject:
+        description: 'Enable Repo Projects?'
+        required: true
+      enableSquashMerge:
+        description: 'Enable Repo Squash Merging?'
+        required: true
+      enableForking:
+        description: 'Enable Repo Forking?'
+        required: true
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+        GITHUB_INPUTS: ${{ toJson(inputs) }}
+      run: |
+        echo "GITHUB_CONTEXT:"
+        echo "$GITHUB_CONTEXT"
+        echo "GITHUB_INPUTS:"
+        echo "$GITHUB_INPUTS"
+    - name: Print workflow inputs
+      run: |
+        echo "repoName: [${{ inputs.repoName }}]"
+        echo "env: [${{ inputs.envName }}]"
+        echo "teams: [${{ inputs.teams }}]"
+        echo "enableIssue: [${{ inputs.enableIssue }}]"
+        echo "enableProject: [${{ inputs.enableProject }}]"
+        echo "enableSquashMerge: [${{ inputs.enableSquashMerge }}]"
+        echo "enableForking: [${{ inputs.enableForking }}]"
+
+  configure-repo:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.envName }}
+    steps:
+      - name: Configure GitHub repo
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.caller-token }}
+          script: |
+            // Set vars for this step
+            let repoName = "${{ inputs.repoName }}"
+            let teams = "${{ env.DEFAULT_TEAMS }},${{ inputs.teams }}".toLowerCase().split(' ').join('-')
+            let enableIssue = ${{ inputs.enableIssue }}
+            let enableProject = ${{ inputs.enableProject }}
+            let enableSquashMerge = ${{ inputs.enableSquashMerge }}
+            let enableForking = ${{ inputs.enableForking }}
+            // Print vars to the log
+            console.log("Team: " + teams)
+            console.log("Enable Issue: " + enableIssue)
+            console.log("Enable Project: " + enableProject)
+            console.log("Allow Squash Merge: " + enableSquashMerge)
+            console.log("Allow Forking: " + enableForking)
+            
+            console.log("Configure repo: " + repoName + " Teams: " + teams)
+
+            try {
+              await github.rest.repos.update({
+                owner: context.payload.organization.login,
+                private: false,
+                repo: repoName,
+                has_issues: enableIssue,
+                has_projects: enableProject,
+                allow_squash_merge: enableSquashMerge
+              })
+            } catch(err) {
+              core.setFailed(`Action failed with error ${err}`);
+            }
+            
+            console.log("Updating repo branch permissions")
+            try {
+              await github.rest.repos.updateBranchProtection({
+                "owner": context.payload.organization.login,
+                "repo": repoName,
+                "branch": 'main',
+                "required_status_checks": { "strict": true, "contexts": [] },
+                "enforce_admins": true,
+                "required_pull_request_reviews": {"dismissal_restrictions": {"users":[], "teams":[]}, "dismiss_stale_reviews": false, "require_code_owner_reviews": true, "required_approving_review_count": 1},
+                "restrictions" : { "users": [], "teams": [], "apps": [] }
+              })
+            } catch(err) {
+              core.setFailed(`Action failed with error ${err}`);
+            }
+            
+            console.log("Setting Team repo permissions")
+            for await (const team of teams.split(",")) {
+              var permission = 'pull'
+              if (team.includes('admin')) {
+                permission = 'admin'
+              } else if (team.includes('maintain')) {
+                permission = 'maintain'
+              } else if (team.includes('write')) {
+                permission = 'push'
+              } else if (team.includes('triage')) {
+                permission = 'triage'
+              }
+              console.log("Team: [" + team + "] - Permission: [" + permission + "]")
+              try {
+                await github.rest.teams.addOrUpdateRepoPermissionsInOrg({
+                  org: context.payload.organization.login,
+                  owner: context.payload.organization.login,
+                  repo: repoName,
+                  team_slug: team,
+                  permission: permission
+                })
+              } catch(err) {
+                core.setFailed(`Action failed with error ${err}`);
+              }
+            }
+            
+            console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
+            try { 
+              await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Thanks for creating a repo. Your new repo is available at: https://github.com/' + context.payload.organization.login + "/" + repoName
+             }) 
+            } catch(err) {
+              core.setFailed(`Action failed with error ${err}`);
+            }
+            
+            console.log("Closing issue")
+            try {
+              await github.rest.issues.update({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed'
+             }) 
+            } catch(err) {
+              core.setFailed(`Action failed with error ${err}`);
+            }

@@ -1,0 +1,155 @@
+name: IssueOps Handler
+on:
+  issues:
+    types: [ opened, demilestoned ]
+
+env:
+  # ID of Milestone to group the issue in
+  ISSUEOPS_MILESTONE: 1
+  # Default teams added to all repos
+  DEFAULT_TEAMS: "org-admin,org-read"
+  # Admin teams with permission to all repos
+  ADMIN_TEAMS: "org-admin"
+
+jobs:
+  # Capture IssueOps inputs
+  initialize:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'issueops')
+    steps:
+    
+      - name: Debug context
+        uses: actions/github-script@v5
+        with:
+          script: |
+            console.log(context)
+            console.log(context.payload.issue.assignees)
+            console.log(context.payload.issue.labels)
+            console.log(context.payload.repository.topics)
+            
+      - name: Set inputs and add milestone
+        id: set-inputs
+        uses: actions/github-script@v5
+        with:
+          script: |
+            bodySplit = context.payload.issue.body.split("\n")
+            // Set vars for this step
+            let repoName = bodySplit[2]
+            let templateRepo = bodySplit[6]
+            let teams = bodySplit[10]
+            let enableIssue = bodySplit[14].includes("X")
+            let enableProject = bodySplit[18].includes("X")
+            let enableSquashMerge = bodySplit[22].includes("X")
+            let enableForking = bodySplit[26].includes("X")
+            // Set vars for subsequent steps
+            core.setOutput('repoName', repoName);
+            core.setOutput('envName', context.payload.organization.login);
+            core.setOutput('templateRepo', templateRepo);
+            core.setOutput('teams', teams);
+            core.setOutput('enableIssue', enableIssue);
+            core.setOutput('enableProject', enableProject);
+            core.setOutput('enableSquashMerge', enableSquashMerge);
+            core.setOutput('enableForking', enableForking);
+            // Print vars to the log
+            // DON'T PRINT ANYTHING UNTIL AFTER INPUTS ARE VALIDATED
+            console.log("New repository name: " + repoName)
+            console.log("Using Environment: " + envName)
+            console.log("Template Repository: " + templateRepo)
+            console.log("Teams: " + teams)
+            console.log("Enable Issue: " + enableIssue)
+            console.log("Enable Project: " + enableProject)
+            console.log("Allow Squash Merge: " + enableSquashMerge)
+            console.log("Allow Forking: " + enableForking)
+            
+            console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
+            try { 
+              await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Workflow [' + context.workflow + ' #' + context.runNumber + '](' + context.payload.repository.html_url + '/actions/runs/' + context.runId + ') has picked up this issue'
+             }) 
+            } catch(err) {
+              core.setFailed(`Action failed with error ${err}`);
+            }
+            
+            console.log("Adding issue to Milestone ID: [${{ env.ISSUEOPS_MILESTONE }}]")
+            try {
+              await github.rest.issues.update({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              milestone: ${{ env.ISSUEOPS_MILESTONE }}
+             }) 
+            } catch(err) {
+              core.setFailed(`Action failed with error ${err}`);
+            }
+    outputs:
+      repoName:           ${{ steps.set-inputs.outputs.repoName }}
+      envName:            ${{ steps.set-inputs.outputs.envName }}
+      templateRepo:       ${{ steps.set-inputs.outputs.templateRepo }}
+      teams:              ${{ steps.set-inputs.outputs.teams }}
+      enableIssue:        ${{ steps.set-inputs.outputs.enableIssue }}
+      enableProject:      ${{ steps.set-inputs.outputs.enableProject }}
+      enableSquashMerge:  ${{ steps.set-inputs.outputs.enableSquashMerge }}
+      enableForking:      ${{ steps.set-inputs.outputs.enableForking }}
+
+  debug:
+    if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
+    needs: initialize
+    runs-on: ubuntu-latest
+    steps:
+        
+    - name: Validate job outputs
+      run: |
+        echo "repoName: [${{ needs.initialize.outputs.repoName }}]"
+        echo "envName: [${{ needs.initialize.outputs.envName }}]"
+        echo "templateRepo: [${{ needs.initialize.outputs.templateRepo }}]"
+        echo "teams: [${{ needs.initialize.outputs.teams }}]"
+        echo "enableIssue: [${{ needs.initialize.outputs.enableIssue }}]"
+        echo "enableProject: [${{ needs.initialize.outputs.enableProject }}]"
+        echo "enableSquashMerge: [${{ needs.initialize.outputs.enableSquashMerge }}]"
+        echo "enableForking: [${{ needs.initialize.outputs.enableForking }}]"
+
+  # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
+  reuse-validate-inputs:
+    uses: ci-cd-scripts/called-workflows/.github/workflows/validate-inputs.yml@main
+    if: contains(github.event.issue.labels.*.name, 'issueops')
+    needs: initialize
+    with:
+      repoName:           ${{ needs.initialize.outputs.repoName }}
+      envName:            ${{ needs.initialize.outputs.envName }}
+      templateRepo:       ${{ needs.initialize.outputs.templateRepo }}
+      teams:              ${{ needs.initialize.outputs.teams }}
+      enableIssue:        ${{ needs.initialize.outputs.enableIssue }}
+      enableProject:      ${{ needs.initialize.outputs.enableProject }}
+      enableSquashMerge:  ${{ needs.initialize.outputs.enableSquashMerge }}
+      enableForking:      ${{ needs.initialize.outputs.enableForking }}
+    secrets:
+      caller-token: ${{ secrets.ORG_TOKEN }}
+
+  reuse-create-repo:
+    uses: ci-cd-scripts/called-workflows/.github/workflows/create-repo.yml@main
+    if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
+    needs: initialize
+    with:
+      repoName:           ${{ needs.initialize.outputs.repoName }}
+      envName:            ${{ needs.initialize.outputs.envName }}
+      templateRepo:       ${{ needs.initialize.outputs.templateRepo }}
+    secrets:
+      caller-token: ${{ secrets.ORG_TOKEN }}
+
+  reuse-configure-repo:
+    uses: ci-cd-scripts/called-workflows/.github/workflows/configure-repo.yml@main
+    if: contains(github.event.issue.labels.*.name, 'issueops:configure-repo')
+    needs: [ initialize, reuse-create-repo ]
+    with:
+      repoName:           ${{ needs.initialize.outputs.repoName }}
+      envName:            ${{ needs.initialize.outputs.envName }}
+      teams:              ${{ needs.initialize.outputs.teams }}
+      enableIssue:        ${{ needs.initialize.outputs.enableIssue }}
+      enableProject:      ${{ needs.initialize.outputs.enableProject }}
+      enableSquashMerge:  ${{ needs.initialize.outputs.enableSquashMerge }}
+      enableForking:      ${{ needs.initialize.outputs.enableForking }}
+    secrets:
+      caller-token: ${{ secrets.ORG_TOKEN }}

@@ -1,0 +1,93 @@
+name: Create repository
+
+on:
+  # Allows you to reuse this workflow from other workflows
+  workflow_call:
+    inputs:
+      repoName:
+        description: 'Repository Name'
+        required: true
+        type: string  # Can be: [boolean,number,string]
+      description:
+        description: 'Repository description'
+        required: false
+        default: "Created via IssueOps"
+        type: string
+      envName:
+        description: 'Environment Name'
+        required: true
+        type: string
+      templateRepo:
+        description: 'Template repo to use'
+        required: false
+        type: string
+    secrets:
+      caller-token:
+        required: true
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      repoName:
+        description: 'Repository Name'
+        required: true
+      description:
+        description: 'Repository description'
+        required: false
+        default: "Created via IssueOps"
+      envName:
+        description: 'Environment Name'
+        required: true
+      templateRepo:
+        description: 'Template repo to use'
+        required: false
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+        GITHUB_INPUTS: ${{ toJson(inputs) }}
+      run: |
+        echo "GITHUB_CONTEXT:"
+        echo "$GITHUB_CONTEXT"
+        echo "GITHUB_INPUTS:"
+        echo "$GITHUB_INPUTS"
+    - name: Print workflow inputs
+      run: |
+        echo "org: [${{ inputs.envName }}]"
+        echo "repoName: [${{ inputs.repoName }}]"
+
+  create-repo:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.envName }}
+    steps:
+      - name: Configure GitHub repo
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.ORG_TOKEN }}
+          script: |
+            // Set vars for this step
+            let repoName = "${{ inputs.repoName }}"
+            let templateRepo = "${{ inputs.templateRepo }}"
+            // Print vars to the log
+            console.log("New repository name: " + repoName)
+            console.log("Template Repository: " + templateRepo)
+            
+            console.log("Create repo: " + repoName + " Template Repo: " + templateRepo
+            
+            console.log("Creating repo from template")
+            try {
+              await github.rest.repos.createUsingTemplate({
+                template_owner: context.payload.organization.login,
+                template_repo: templateRepo,
+                name: repoName,
+                owner: context.payload.organization.login,
+                description: "${{ inputs.description }}",
+                include_all_branches: true,
+                private: false
+              })
+            } catch(err) {
+              core.setFailed(`Action failed with error ${err}`);
+            }
