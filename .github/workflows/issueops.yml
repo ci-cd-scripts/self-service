@@ -94,22 +94,22 @@ jobs:
       enableSquashMerge:  ${{ steps.set-inputs.outputs.enableSquashMerge }}
       enableForking:      ${{ steps.set-inputs.outputs.enableForking }}
 
-  debug:
-    if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
-    needs: initialize
-    runs-on: ubuntu-latest
-    steps:
+  # debug:
+  #   if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
+  #   needs: initialize
+  #   runs-on: ubuntu-latest
+  #   steps:
         
-    - name: Validate job outputs
-      run: |
-        echo "repoName: [${{ needs.initialize.outputs.repoName }}]"
-        echo "envName: [${{ needs.initialize.outputs.envName }}]"
-        echo "templateRepo: [${{ needs.initialize.outputs.templateRepo }}]"
-        echo "teams: [${{ needs.initialize.outputs.teams }}]"
-        echo "enableIssue: [${{ needs.initialize.outputs.enableIssue }}]"
-        echo "enableProject: [${{ needs.initialize.outputs.enableProject }}]"
-        echo "enableSquashMerge: [${{ needs.initialize.outputs.enableSquashMerge }}]"
-        echo "enableForking: [${{ needs.initialize.outputs.enableForking }}]"
+  #   - name: Validate job outputs
+  #     run: |
+  #       echo "repoName: [${{ needs.initialize.outputs.repoName }}]"
+  #       echo "envName: [${{ needs.initialize.outputs.envName }}]"
+  #       echo "templateRepo: [${{ needs.initialize.outputs.templateRepo }}]"
+  #       echo "teams: [${{ needs.initialize.outputs.teams }}]"
+  #       echo "enableIssue: [${{ needs.initialize.outputs.enableIssue }}]"
+  #       echo "enableProject: [${{ needs.initialize.outputs.enableProject }}]"
+  #       echo "enableSquashMerge: [${{ needs.initialize.outputs.enableSquashMerge }}]"
+  #       echo "enableForking: [${{ needs.initialize.outputs.enableForking }}]"
 
   # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
   reuse-validate-inputs:
@@ -131,7 +131,7 @@ jobs:
   reuse-create-repo:
     uses: ci-cd-scripts/self-service/.github/workflows/create-repo.yml@main
     if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
-    needs: initialize
+    needs: reuse-validate-inputs
     with:
       repoName:           ${{ needs.initialize.outputs.repoName }}
       envName:            ${{ needs.initialize.outputs.envName }}
@@ -142,7 +142,7 @@ jobs:
   reuse-configure-repo:
     uses: ci-cd-scripts/self-service/.github/workflows/configure-repo.yml@main
     if: contains(github.event.issue.labels.*.name, 'issueops:configure-repo')
-    needs: [ initialize, reuse-create-repo ]
+    needs: [ reuse-validate-inputs, reuse-create-repo ]
     with:
       repoName:           ${{ needs.initialize.outputs.repoName }}
       envName:            ${{ needs.initialize.outputs.envName }}
