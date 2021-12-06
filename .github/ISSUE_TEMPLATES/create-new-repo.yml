@@ -1,0 +1,77 @@
+# https://gh-community.github.io/issue-template-feedback/structured/#url-query-parameter-prefills
+# Test the above params to create pre-filled issues via URL only ;)
+name: Create repositories using IssueOps
+description: This IssueOps takes the input from an user to create a repository based on Template Repository and safe settings
+title: "[IssueOps]: "
+labels: ["issueops", "issueops:new-repo", "issueops:configure-repo"]
+assignees:
+  - KevinMSampson
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this report!
+        
+  - type: input
+    id: repo-name
+    attributes:
+      label: New Repository Name
+      description: Type in the name of your new repository that applies the following permission
+      placeholder: ex. new-repository
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: repo-template
+    attributes:
+      label: Template Repository
+      description: Select Template Repository that you want to use
+      options:
+        - sample-template-repository-universe
+    validations:
+      required: true
+      
+  - type: input
+    id: team-slug
+    attributes:
+      label: Team Permission
+      description: "Type in the team that you want to provide repo access to (default: Read access)"
+      placeholder: ex. Avengers
+    validations:
+      required: false
+      
+  - type: checkboxes
+    id: enable-issues
+    attributes:
+      label: Enable Issues
+      description: Do you want to enable issues?
+      options:
+        - label: Yes, I want to enable Issues
+          required: false
+          
+  - type: checkboxes
+    id: enable-project
+    attributes:
+      label: Enable Project
+      description: Do you want to enable Projects?
+      options:
+        - label: Yes, I want to enable Projects
+          required: false
+          
+  - type: checkboxes
+    id: enable-squash-merge
+    attributes:
+      label: Allow Squash Merge
+      description: Do you want to allow squash merge?
+      options:
+        - label: Yes, I want to allow squash merge
+          required: false
+     
+  - type: checkboxes
+    id: enable-forking
+    attributes:
+      label: Allow forking
+      description: Do you want to enable forking?
+      options:
+        - label: Yes, I want to allow forking
+          required: false
