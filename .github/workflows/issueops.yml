@@ -53,7 +53,7 @@ jobs:
             // Print vars to the log
             // DON'T PRINT ANYTHING UNTIL AFTER INPUTS ARE VALIDATED
             console.log("New repository name: " + repoName)
-            console.log("Using Environment: " + envName)
+            console.log("Using Environment: " + context.payload.organization.login)
             console.log("Template Repository: " + templateRepo)
             console.log("Teams: " + teams)
             console.log("Enable Issue: " + enableIssue)
