@@ -113,7 +113,7 @@ jobs:
 
   # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
   reuse-validate-inputs:
-    uses: ci-cd-scripts/called-workflows/.github/workflows/validate-inputs.yml@main
+    uses: ci-cd-scripts/self-service/.github/workflows/validate-inputs.yml@main
     if: contains(github.event.issue.labels.*.name, 'issueops')
     needs: initialize
     with:
@@ -129,7 +129,7 @@ jobs:
       caller-token: ${{ secrets.ORG_TOKEN }}
 
   reuse-create-repo:
-    uses: ci-cd-scripts/called-workflows/.github/workflows/create-repo.yml@main
+    uses: ci-cd-scripts/self-service/.github/workflows/create-repo.yml@main
     if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
     needs: initialize
     with:
@@ -140,7 +140,7 @@ jobs:
       caller-token: ${{ secrets.ORG_TOKEN }}
 
   reuse-configure-repo:
-    uses: ci-cd-scripts/called-workflows/.github/workflows/configure-repo.yml@main
+    uses: ci-cd-scripts/self-service/.github/workflows/configure-repo.yml@main
     if: contains(github.event.issue.labels.*.name, 'issueops:configure-repo')
     needs: [ initialize, reuse-create-repo ]
     with:
