@@ -87,7 +87,7 @@ jobs:
             function teamExists(teamSlug) {
               console.log("Team: [" + teamSlug + "]")
               try {
-                await github.rest.teams.getByName({
+                github.rest.teams.getByName({
                   "org": context.payload.organization.login,
                   "team_slug": teamSlug
                 })
@@ -100,7 +100,7 @@ jobs:
 
             function teamMember(teamSlug) {
               try {
-                await github.rest.teams.getMembershipForUserInOrg({
+                github.rest.teams.getMembershipForUserInOrg({
                   org: context.payload.organization.login,
                   team_slug: teamSlug,
                   username: context.payload.sender.login,
