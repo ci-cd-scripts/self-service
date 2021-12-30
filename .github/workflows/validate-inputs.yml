@@ -123,6 +123,7 @@ jobs:
 
             // FORMAT STANDARDIZED TEAM SLUGS
             const slugs = teams.split(",").filter(e => e.trim()).flatMap(e => teamSlugs(e))
+            console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
             if (!slugs.filter(e => e.endsWith('-admin')).some(e => async function(){ return await teamMember(e) })) {

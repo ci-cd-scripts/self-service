@@ -131,7 +131,7 @@ jobs:
   reuse-create-repo:
     uses: ci-cd-scripts/self-service/.github/workflows/create-repo.yml@main
     if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
-    needs: reuse-validate-inputs
+    needs: [initialize, reuse-validate-inputs]
     with:
       repoName:           ${{ needs.initialize.outputs.repoName }}
       envName:            ${{ needs.initialize.outputs.envName }}
@@ -142,7 +142,7 @@ jobs:
   reuse-configure-repo:
     uses: ci-cd-scripts/self-service/.github/workflows/configure-repo.yml@main
     if: contains(github.event.issue.labels.*.name, 'issueops:configure-repo')
-    needs: [ reuse-validate-inputs, reuse-create-repo ]
+    needs: [initialize, reuse-validate-inputs, reuse-create-repo]
     with:
       repoName:           ${{ needs.initialize.outputs.repoName }}
       envName:            ${{ needs.initialize.outputs.envName }}
