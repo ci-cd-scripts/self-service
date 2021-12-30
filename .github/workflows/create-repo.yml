@@ -75,7 +75,7 @@ jobs:
             console.log("New repository name: " + repoName)
             console.log("Template Repository: " + templateRepo)
             
-            console.log("Create repo: " + repoName + " Template Repo: " + templateRepo
+            console.log("Create repo: " + repoName + " Template Repo: " + templateRepo)
             
             console.log("Creating repo from template")
             try {
