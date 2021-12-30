@@ -63,6 +63,7 @@ on:
         required: true
 
 jobs:
+  # debug is used to help validate job inputs & vars
   debug:
     runs-on: ubuntu-latest
     steps:
@@ -110,33 +111,33 @@ jobs:
             
             console.log("Configure repo: " + repoName + " Teams: " + teams)
 
-            try {
-              await github.rest.repos.update({
-                owner: context.payload.organization.login,
-                private: false,
-                repo: repoName,
-                has_issues: enableIssue,
-                has_projects: enableProject,
-                allow_squash_merge: enableSquashMerge
-              })
-            } catch(err) {
+            github.rest.repos.update({
+              owner: context.payload.organization.login,
+              private: false,
+              repo: repoName,
+              has_issues: enableIssue,
+              has_projects: enableProject,
+              allow_squash_merge: enableSquashMerge
+            }).then((res) => {
+              console.log(`Repo updated.`)
+            }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
-            }
+            })
             
             console.log("Updating repo branch permissions")
-            try {
-              await github.rest.repos.updateBranchProtection({
-                "owner": context.payload.organization.login,
-                "repo": repoName,
-                "branch": 'main',
-                "required_status_checks": { "strict": true, "contexts": [] },
-                "enforce_admins": true,
-                "required_pull_request_reviews": {"dismissal_restrictions": {"users":[], "teams":[]}, "dismiss_stale_reviews": false, "require_code_owner_reviews": true, "required_approving_review_count": 1},
-                "restrictions" : { "users": [], "teams": [], "apps": [] }
-              })
-            } catch(err) {
+            github.rest.repos.updateBranchProtection({
+              "owner": context.payload.organization.login,
+              "repo": repoName,
+              "branch": 'main',
+              "required_status_checks": { "strict": true, "contexts": [] },
+              "enforce_admins": true,
+              "required_pull_request_reviews": {"dismissal_restrictions": {"users":[], "teams":[]}, "dismiss_stale_reviews": false, "require_code_owner_reviews": true, "required_approving_review_count": 1},
+              "restrictions" : { "users": [], "teams": [], "apps": [] }
+            }).then((res) => {
+              console.log(`Repo branch permissions updated.`)
+            }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
-            }
+            })
             
             console.log("Setting Team repo permissions")
             for await (const team of teams.split(",")) {
@@ -151,39 +152,39 @@ jobs:
                 permission = 'triage'
               }
               console.log("Team: [" + team + "] - Permission: [" + permission + "]")
-              try {
-                await github.rest.teams.addOrUpdateRepoPermissionsInOrg({
-                  org: context.payload.organization.login,
-                  owner: context.payload.organization.login,
-                  repo: repoName,
-                  team_slug: team,
-                  permission: permission
-                })
-              } catch(err) {
+              github.rest.teams.addOrUpdateRepoPermissionsInOrg({
+                org: context.payload.organization.login,
+                owner: context.payload.organization.login,
+                repo: repoName,
+                team_slug: team,
+                permission: permission
+              }).then((res) => {
+                console.log(`Team added to repo.`)
+              }).catch((err) => {
                 core.setFailed(`Action failed with error ${err}`);
-              }
+              })
             }
             
             console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
-            try { 
-              await github.rest.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: 'Thanks for creating a repo. Your new repo is available at: https://github.com/' + context.payload.organization.login + "/" + repoName
-             }) 
-            } catch(err) {
+            }).then((res) => {
+              console.log(`Comment added to issue. Link: ${res.html_url}`)
+            }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
-            }
+            })
             
             console.log("Closing issue")
-            try {
-              await github.rest.issues.update({
+            github.rest.issues.update({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'closed'
-             }) 
-            } catch(err) {
+            }).then((res) => {
+              console.log(`Issue closed. Link: ${res.html_url}`)
+            }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
-            }
+            })

@@ -42,6 +42,7 @@ on:
         required: true
 
 jobs:
+  # debug is used to help validate job inputs & vars
   debug:
     runs-on: ubuntu-latest
     steps:
@@ -84,32 +85,31 @@ jobs:
             let enableForking = ${{ inputs.enableForking }}
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
 
-            async function teamExists(teamSlug) {
-              console.log("Team: [" + teamSlug + "]")
-              try {
-                await github.rest.teams.getByName({
-                  "org": context.payload.organization.login,
-                  "team_slug": teamSlug
-                })
-              } catch(err) {
+            function teamExists(teamSlug) {
+              github.rest.teams.getByName({
+                "org": context.payload.organization.login,
+                "team_slug": teamSlug
+              }).then((res) => {
+                console.log(`Team [${teamSlug}] exists`)
+                return true
+              }).catch((err) => {
                 console.log(`Team: [${teamSlug}] does not exist: ${err}`)
                 return false
-              }
-              return true
+              })
             }
 
-            async function teamMember(teamSlug) {
-              try {
-                await github.rest.teams.getMembershipForUserInOrg({
-                  org: context.payload.organization.login,
-                  team_slug: teamSlug,
-                  username: context.payload.sender.login,
-                })
-              } catch(err) {
+            function teamMember(teamSlug) {
+              github.rest.teams.getMembershipForUserInOrg({
+                org: context.payload.organization.login,
+                team_slug: teamSlug,
+                username: context.payload.sender.login,
+              }).then((res) => {
+                console.log(`[${context.payload.sender.login}] is a member of the [${teamSlug}] team`)
+                return true
+              }).catch((err) => {
                 console.log(`Not a member of [${teamSlug}]: ${err}`)
                 return false
-              }
-              return true
+              })
             }
 
             function teamSlugs(team) {
@@ -126,14 +126,14 @@ jobs:
             console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
-            if (!slugs.filter(e => e.endsWith('-admin')).some(e => async function(){ return await teamMember(e) })) {
+            if (!slugs.filter(e => e.endsWith('-admin')).some(e => teamMember(e))) {
               core.setFailed(`User is not a member of any admin teams`);
             } else {
               console.log(`User is a member of an admin team`)
             }
 
             // EACH TEAM EXISTS
-            if (!slugs.every(e => async function(){await teamExists(e)})) {
+            if (!slugs.every(e => teamExists(e))) {
               core.setFailed(`Not all teams entered are valid`);
             } else {
               console.log("All teams entered exist")

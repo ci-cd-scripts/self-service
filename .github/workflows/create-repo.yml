@@ -42,6 +42,7 @@ on:
         required: false
 
 jobs:
+  # debug is used to help validate job inputs & vars
   debug:
     runs-on: ubuntu-latest
     steps:
@@ -84,8 +85,8 @@ jobs:
               description: "${{ inputs.description }}",
               include_all_branches: true,
               private: false
-            }).then((stuff) => {
-              console.log(`Repo created. Link: ${stuff.data.html_url}`)
+            }).then((res) => {
+              console.log(`Repo created. Link: ${res.data.html_url}`)
             }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
-            });
+            })

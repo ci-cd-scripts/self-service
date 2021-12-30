@@ -62,28 +62,31 @@ jobs:
             console.log("Allow Forking: " + enableForking)
             
             console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
-            try { 
-              await github.rest.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: 'Workflow [' + context.workflow + ' #' + context.runNumber + '](' + context.payload.repository.html_url + '/actions/runs/' + context.runId + ') has picked up this issue'
-             }) 
-            } catch(err) {
+            }).then((res) => {
+              console.log(`Comment added to issue. Link: ${res.html_url}`)
+              return true
+            }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
-            }
+            })
             
             console.log("Adding issue to Milestone ID: [${{ env.ISSUEOPS_MILESTONE }}]")
-            try {
-              await github.rest.issues.update({
+            github.rest.issues.update({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               milestone: ${{ env.ISSUEOPS_MILESTONE }}
-             }) 
-            } catch(err) {
+            }).then((res) => {
+              console.log(`Issue added to milestone.`)
+              console.log(res)
+              return true
+            }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
-            }
+            })
     outputs:
       repoName:           ${{ steps.set-inputs.outputs.repoName }}
       envName:            ${{ steps.set-inputs.outputs.envName }}
