@@ -87,5 +87,5 @@ jobs:
             }).then((stuff) => {
               console.log(`Repo created. Link: ${stuff.data.html_url}`)
             }).catch((err) => {
-              console.log(`Action failed with error ${err}`);
+              core.setFailed(`Action failed with error ${err}`);
             });
