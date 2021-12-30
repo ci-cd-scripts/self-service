@@ -73,21 +73,19 @@ jobs:
             let templateRepo = "${{ inputs.templateRepo }}"
             // Print vars to the log
             console.log("New repository name: " + repoName)
-            console.log("Template Repository: " + templateRepo)
-            
-            console.log("Create repo: " + repoName + " Template Repo: " + templateRepo)
-            
+            console.log("Template Repository: " + templateRepo)            
             console.log("Creating repo from template")
-            try {
-              await github.rest.repos.createUsingTemplate({
-                template_owner: context.payload.organization.login,
-                template_repo: templateRepo,
-                name: repoName,
-                owner: context.payload.organization.login,
-                description: "${{ inputs.description }}",
-                include_all_branches: true,
-                private: false
-              })
-            } catch(err) {
-              core.setFailed(`Action failed with error ${err}`);
-            }
+
+            github.rest.repos.createUsingTemplate({
+              template_owner: 'ci-cd-scripts',
+              template_repo: templateRepo,
+              name: repoName,
+              owner: 'ci-cd-scripts',
+              description: "${{ inputs.description }}",
+              include_all_branches: true,
+              private: false
+            }).then((stuff) => {
+              console.log(`Repo created. Link: ${stuff.data.html_url}`)
+            }).catch((err) => {
+              console.log(`Action failed with error ${err}`);
+            });
