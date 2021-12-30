@@ -84,10 +84,10 @@ jobs:
             let enableForking = ${{ inputs.enableForking }}
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
 
-            function teamExists(teamSlug) {
+            async function teamExists(teamSlug) {
               console.log("Team: [" + teamSlug + "]")
               try {
-                github.rest.teams.getByName({
+                await github.rest.teams.getByName({
                   "org": context.payload.organization.login,
                   "team_slug": teamSlug
                 })
@@ -98,9 +98,9 @@ jobs:
               return true
             }
 
-            function teamMember(teamSlug) {
+            async function teamMember(teamSlug) {
               try {
-                github.rest.teams.getMembershipForUserInOrg({
+                await github.rest.teams.getMembershipForUserInOrg({
                   org: context.payload.organization.login,
                   team_slug: teamSlug,
                   username: context.payload.sender.login,
@@ -125,11 +125,15 @@ jobs:
             const slugs = teams.split(",").filter(e => e.trim()).flatMap(e => teamSlugs(e))
 
             // SENDER IS IN ADMIN TEAM
-            if (!slugs.filter(e => e.endsWith('-admin')).some(e => teamMember(e))) {
+            if (!slugs.filter(e => e.endsWith('-admin')).some(e => async function(){ return await teamMember(e) })) {
               core.setFailed(`User is not a member of any admin teams`);
+            } else {
+              console.log(`User is a member of an admin team`)
             }
 
             // EACH TEAM EXISTS
-            if (!slugs.every(e => teamExists(e))) {
+            if (!slugs.every(e => async function(){await teamExists(e)})) {
               core.setFailed(`Not all teams entered are valid`);
+            } else {
+              console.log("All teams entered exist")
             }
