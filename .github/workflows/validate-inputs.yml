@@ -1,4 +1,6 @@
 name: Validate Inputs
+# Read more on securing GitHub Action/Workflow inputs:
+# https://securitylab.github.com/research/github-actions-untrusted-input/
 
 on:
   # Allows you to reuse this workflow from other workflows
@@ -69,16 +71,26 @@ jobs:
   validate-inputs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.envName }}
+    outputs:
+      repoName:           ${{ steps.set-inputs.outputs.repoName }}
+      envName:            ${{ steps.set-inputs.outputs.envName }}
+      templateRepo:       ${{ steps.set-inputs.outputs.templateRepo }}
+      teams:              ${{ steps.set-inputs.outputs.teams }}
+      enableIssue:        ${{ steps.set-inputs.outputs.enableIssue }}
+      enableProject:      ${{ steps.set-inputs.outputs.enableProject }}
+      enableSquashMerge:  ${{ steps.set-inputs.outputs.enableSquashMerge }}
+      enableForking:      ${{ steps.set-inputs.outputs.enableForking }}
     steps:
-      - name: Configure GitHub repo
+      - name: Validate & Format Inputs
+        id: format-inputs
         uses: actions/github-script@v5
         with:
           github-token: ${{ secrets.caller-token }}
           script: |
             // Set vars for this step
             let repoName = "${{ inputs.repoName }}"
-            let teams = "${{ inputs.teams }}".trim()
             let templateRepo = "${{ inputs.templateRepo }}"
+            let teams = "${{ inputs.teams }}".trim()
             let enableIssue = ${{ inputs.enableIssue }}
             let enableProject = ${{ inputs.enableProject }}
             let enableSquashMerge = ${{ inputs.enableSquashMerge }}
@@ -86,7 +98,7 @@ jobs:
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
 
             function teamExists(teamSlug) {
-              github.rest.teams.getByName({
+              await github.rest.teams.getByName({
                 "org": context.payload.organization.login,
                 "team_slug": teamSlug
               }).then((res) => {
@@ -99,7 +111,7 @@ jobs:
             }
 
             function teamMember(teamSlug) {
-              github.rest.teams.getMembershipForUserInOrg({
+              await github.rest.teams.getMembershipForUserInOrg({
                 org: context.payload.organization.login,
                 team_slug: teamSlug,
                 username: context.payload.sender.login,
@@ -137,4 +149,12 @@ jobs:
               core.setFailed(`Not all teams entered are valid`);
             } else {
               console.log("All teams entered exist")
+              core.setOutput('repoName', repoName); // FORMATTED
+              core.setOutput('envName', context.payload.organization.login);
+              core.setOutput('templateRepo', templateRepo);
+              core.setOutput('teams', slugs); // FORMATTED
+              core.setOutput('enableIssue', enableIssue);
+              core.setOutput('enableProject', enableProject);
+              core.setOutput('enableSquashMerge', enableSquashMerge);
+              core.setOutput('enableForking', enableForking);
             }

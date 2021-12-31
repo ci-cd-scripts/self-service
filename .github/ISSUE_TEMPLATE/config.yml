@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Community Support
+    url: https://github.community/
+    about: Please ask and answer questions here.
+  - name: IssueOps Requests
+    url: https://github.com/ci-cd-scripts/self-service/milestone/1
+    about: All IssueOps requests are auto-added to this milestone.
+  - name: Kevin M Sampson Site
+    url: https://kevinmsampson.com/
+    about: Learn more about the author of these scripts.

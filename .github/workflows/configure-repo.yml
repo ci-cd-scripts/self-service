@@ -111,7 +111,7 @@ jobs:
             
             console.log("Configure repo: " + repoName + " Teams: " + teams)
 
-            github.rest.repos.update({
+            await github.rest.repos.update({
               owner: context.payload.organization.login,
               private: false,
               repo: repoName,
@@ -125,7 +125,7 @@ jobs:
             })
             
             console.log("Updating repo branch permissions")
-            github.rest.repos.updateBranchProtection({
+            await github.rest.repos.updateBranchProtection({
               "owner": context.payload.organization.login,
               "repo": repoName,
               "branch": 'main',
@@ -140,7 +140,7 @@ jobs:
             })
             
             console.log("Setting Team repo permissions")
-            for await (const team of teams.split(",")) {
+            for (const team of teams.split(",")) {
               var permission = 'pull'
               if (team.includes('admin')) {
                 permission = 'admin'
@@ -152,7 +152,7 @@ jobs:
                 permission = 'triage'
               }
               console.log("Team: [" + team + "] - Permission: [" + permission + "]")
-              github.rest.teams.addOrUpdateRepoPermissionsInOrg({
+              await github.rest.teams.addOrUpdateRepoPermissionsInOrg({
                 org: context.payload.organization.login,
                 owner: context.payload.organization.login,
                 repo: repoName,
@@ -166,7 +166,7 @@ jobs:
             }
             
             console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -178,7 +178,7 @@ jobs:
             })
             
             console.log("Closing issue")
-            github.rest.issues.update({
+            await github.rest.issues.update({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,

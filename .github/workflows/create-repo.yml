@@ -77,7 +77,7 @@ jobs:
             console.log("Template Repository: " + templateRepo)            
             console.log("Creating repo from template")
 
-            github.rest.repos.createUsingTemplate({
+            await github.rest.repos.createUsingTemplate({
               template_owner: 'ci-cd-scripts',
               template_repo: templateRepo,
               name: repoName,
