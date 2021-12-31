@@ -138,7 +138,7 @@ jobs:
             console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
-            var adminTeams = await slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e))
+            var adminTeams = await Promise.all(slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e)))
             if (!adminTeams.some(e => e)) {
               core.setFailed(`User is not a member of any admin teams`);
             } else {
