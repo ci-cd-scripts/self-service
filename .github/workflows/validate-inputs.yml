@@ -42,6 +42,32 @@ on:
     secrets:
       caller-token:
         required: true
+    # Map the workflow outputs to job outputs
+    outputs:
+      repoName:
+        description: "The formatted repo name"
+        value: ${{ jobs.validate-inputs.outputs.repoName }}
+      envName:
+        description: "The formatted environment name"
+        value: ${{ jobs.validate-inputs.outputs.envName }}
+      templateRepo:
+        description: "The formatted template repo name"
+        value: ${{ jobs.validate-inputs.outputs.templateRepo }}
+      teams:
+        description: "The formatted team slugs"
+        value: ${{ jobs.validate-inputs.outputs.teams }}
+      enableIssue:
+        description: "The formatted enable issue boolean string"
+        value: ${{ jobs.validate-inputs.outputs.enableIssue }}
+      enableProject:
+        description: "The formatted enable project boolean string"
+        value: ${{ jobs.validate-inputs.outputs.enableProject }}
+      enableSquashMerge:
+        description: "The formatted enable squashmerge boolean string"
+        value: ${{ jobs.validate-inputs.outputs.enableSquashMerge }}
+      enableForking:
+        description: "The formatted enable forking boolean string"
+        value: ${{ jobs.validate-inputs.outputs.enableForking }}
 
 jobs:
   # debug is used to help validate job inputs & vars
