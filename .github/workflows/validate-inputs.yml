@@ -72,14 +72,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.envName }}
     outputs:
-      repoName:           ${{ steps.set-inputs.outputs.repoName }}
-      envName:            ${{ steps.set-inputs.outputs.envName }}
-      templateRepo:       ${{ steps.set-inputs.outputs.templateRepo }}
-      teams:              ${{ steps.set-inputs.outputs.teams }}
-      enableIssue:        ${{ steps.set-inputs.outputs.enableIssue }}
-      enableProject:      ${{ steps.set-inputs.outputs.enableProject }}
-      enableSquashMerge:  ${{ steps.set-inputs.outputs.enableSquashMerge }}
-      enableForking:      ${{ steps.set-inputs.outputs.enableForking }}
+      repoName:           ${{ steps.format-inputs.outputs.repoName }}
+      envName:            ${{ steps.format-inputs.outputs.envName }}
+      templateRepo:       ${{ steps.format-inputs.outputs.templateRepo }}
+      teams:              ${{ steps.format-inputs.outputs.teams }}
+      enableIssue:        ${{ steps.format-inputs.outputs.enableIssue }}
+      enableProject:      ${{ steps.format-inputs.outputs.enableProject }}
+      enableSquashMerge:  ${{ steps.format-inputs.outputs.enableSquashMerge }}
+      enableForking:      ${{ steps.format-inputs.outputs.enableForking }}
     steps:
       - name: Validate & Format Inputs
         id: format-inputs
