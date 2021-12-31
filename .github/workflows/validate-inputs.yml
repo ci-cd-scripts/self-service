@@ -140,12 +140,8 @@ jobs:
             console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
-            var promises = slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e))
-            var adminTeams = await Promise.all(promises)
-            console.log(adminTeams)
+            var adminTeams = await Promise.all(slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e)))
             if (!adminTeams.some(e => e)) {
-              console.log(adminTeams)
-              
               core.setFailed(`User is not a member of any admin teams.`);
             } else {
               console.log(`User is a member of an admin team`)
@@ -153,9 +149,7 @@ jobs:
 
             // EACH TEAM EXISTS
             var existingTeams = await Promise.all(slugs.map(e => teamExists(e)))
-            console.log(existingTeams)
             if (!existingTeams.every(e => e)) {
-              console.log(existingTeams)
               core.setFailed(`Not all teams entered are valid`);
             } else {
               console.log("All teams entered exist")
