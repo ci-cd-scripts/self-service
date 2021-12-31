@@ -97,8 +97,8 @@ jobs:
             let enableForking = ${{ inputs.enableForking }}
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
 
-            function teamExists(teamSlug) {
-              github.rest.teams.getByName({
+            async function teamExists(teamSlug) {
+              await github.rest.teams.getByName({
                 "org": context.payload.organization.login,
                 "team_slug": teamSlug
               }).then((res) => {
@@ -110,8 +110,8 @@ jobs:
               })
             }
 
-            function teamMember(teamSlug) {
-              github.rest.teams.getMembershipForUserInOrg({
+            async function teamMember(teamSlug) {
+              await github.rest.teams.getMembershipForUserInOrg({
                 org: context.payload.organization.login,
                 team_slug: teamSlug,
                 username: context.payload.sender.login,
