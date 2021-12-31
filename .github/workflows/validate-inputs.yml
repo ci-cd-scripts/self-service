@@ -98,30 +98,32 @@ jobs:
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
 
             async function teamExists(teamSlug) {
+              var exists = false
               await github.rest.teams.getByName({
                 "org": context.payload.organization.login,
                 "team_slug": teamSlug
               }).then((res) => {
                 console.log(`Team [${teamSlug}] exists`)
-                return true
+                exists = true
               }).catch((err) => {
                 console.log(`Team: [${teamSlug}] does not exist: ${err}`)
-                return false
               })
+              return exists
             }
 
             async function teamMember(teamSlug) {
+              var member = false
               await github.rest.teams.getMembershipForUserInOrg({
                 org: context.payload.organization.login,
                 team_slug: teamSlug,
                 username: context.payload.sender.login,
               }).then((res) => {
                 console.log(`[${context.payload.sender.login}] is a member of the [${teamSlug}] team`)
-                return true
+                member = true
               }).catch((err) => {
                 console.log(`Not a member of [${teamSlug}]: ${err}`)
-                return false
               })
+              return member
             }
 
             function teamSlugs(team) {
@@ -138,7 +140,8 @@ jobs:
             console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
-            var adminTeams = await Promise.all(slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e)))
+            var promises = slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e))
+            var adminTeams = await Promise.all(promises)
             console.log(adminTeams)
             if (!adminTeams.some(e => e)) {
               console.log(adminTeams)
