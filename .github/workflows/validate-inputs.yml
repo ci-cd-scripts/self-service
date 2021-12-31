@@ -98,7 +98,7 @@ jobs:
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
 
             function teamExists(teamSlug) {
-              await github.rest.teams.getByName({
+              github.rest.teams.getByName({
                 "org": context.payload.organization.login,
                 "team_slug": teamSlug
               }).then((res) => {
@@ -111,7 +111,7 @@ jobs:
             }
 
             function teamMember(teamSlug) {
-              await github.rest.teams.getMembershipForUserInOrg({
+              github.rest.teams.getMembershipForUserInOrg({
                 org: context.payload.organization.login,
                 team_slug: teamSlug,
                 username: context.payload.sender.login,
@@ -138,14 +138,16 @@ jobs:
             console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
-            if (!slugs.filter(e => e.endsWith('-admin')).some(e => teamMember(e))) {
+            var adminTeams = await slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e))
+            if (!adminTeams.some(e => e)) {
               core.setFailed(`User is not a member of any admin teams`);
             } else {
               console.log(`User is a member of an admin team`)
             }
 
             // EACH TEAM EXISTS
-            if (!slugs.every(e => teamExists(e))) {
+            var existingTeams = await Promise.all(slugs.map(e => teamExists(e)))
+            if (!existingTeams.every(e => e)) {
               core.setFailed(`Not all teams entered are valid`);
             } else {
               console.log("All teams entered exist")
