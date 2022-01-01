@@ -72,20 +72,20 @@ jobs:
           script: |
             // Set vars for this step
             let repoName = "${{ fromJSON(inputs.params).repoName }}"
-            let teams = "${{ fromJSON(inputs.params).teams }}"
+            let teams = ${{ fromJSON(inputs.params).teams }}
             let enableIssue = ${{ fromJSON(inputs.params).enableIssue }}
             let enableProject = ${{ fromJSON(inputs.params).enableProject }}
             let enableSquashMerge = ${{ fromJSON(inputs.params).enableSquashMerge }}
             let enableForking = ${{ fromJSON(inputs.params).enableForking }}
             // Print vars to the log
-            console.log("Team: " + teams)
+            console.log("Repo Name: " + repoName)
+            console.log("Teams: " + teams)
             console.log("Enable Issue: " + enableIssue)
             console.log("Enable Project: " + enableProject)
             console.log("Allow Squash Merge: " + enableSquashMerge)
             console.log("Allow Forking: " + enableForking)
             
-            console.log("Configure repo: " + repoName + " Teams: " + teams)
-
+            console.log("Configuring repo.")
             await github.rest.repos.update({
               owner: context.payload.organization.login,
               private: false,
@@ -114,8 +114,8 @@ jobs:
               core.setFailed(`Action failed with error ${err}`);
             })
             
-            console.log("Setting Team repo permissions")
-            for (const team of teams.split(",")) {
+            console.log("Setting repo permissions per team")
+            for (const team of teams) {
               var permission = 'pull'
               if (team.includes('admin')) {
                 permission = 'admin'

@@ -65,7 +65,7 @@ jobs:
             let repoName = "${{ fromJSON(inputs.params).repoName }}"
             let templateRepo = "${{ fromJSON(inputs.params).templateRepo }}"
             // Print vars to the log
-            console.log("New repository name: " + repoName)
+            console.log("Repo Name: " + repoName)
             console.log("Template Repository: " + templateRepo)            
             console.log("Creating repo from template")
 
