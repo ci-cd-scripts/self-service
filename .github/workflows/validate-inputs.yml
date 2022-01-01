@@ -115,7 +115,7 @@ jobs:
 
             async function adminTeamMember(teamSlug) {
               var member = false
-              if (teamSlug.endsWith('-admin') {
+              if (teamSlug.endsWith('-admin')) {
                 await github.rest.teams.getMembershipForUserInOrg({
                   org: context.payload.organization.login,
                   team_slug: teamSlug,
