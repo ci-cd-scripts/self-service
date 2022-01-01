@@ -1,6 +1,8 @@
 name: Validate Inputs
 # Read more on securing GitHub Action/Workflow inputs:
 # https://securitylab.github.com/research/github-actions-untrusted-input/
+# Read more on core annotations:
+# https://github.com/actions/toolkit/tree/main/packages/core#annotations
 
 on:
   # Allows you to reuse this workflow from other workflows
@@ -44,30 +46,9 @@ on:
         required: true
     # Map the workflow outputs to job outputs
     outputs:
-      repoName:
-        description: "The formatted repo name"
-        value: ${{ jobs.validate-inputs.outputs.repoName }}
-      envName:
-        description: "The formatted environment name"
-        value: ${{ jobs.validate-inputs.outputs.envName }}
-      templateRepo:
-        description: "The formatted template repo name"
-        value: ${{ jobs.validate-inputs.outputs.templateRepo }}
-      teams:
-        description: "The formatted team slugs"
-        value: ${{ jobs.validate-inputs.outputs.teams }}
-      enableIssue:
-        description: "The formatted enable issue boolean string"
-        value: ${{ jobs.validate-inputs.outputs.enableIssue }}
-      enableProject:
-        description: "The formatted enable project boolean string"
-        value: ${{ jobs.validate-inputs.outputs.enableProject }}
-      enableSquashMerge:
-        description: "The formatted enable squashmerge boolean string"
-        value: ${{ jobs.validate-inputs.outputs.enableSquashMerge }}
-      enableForking:
-        description: "The formatted enable forking boolean string"
-        value: ${{ jobs.validate-inputs.outputs.enableForking }}
+      params:
+        description: "The formatted params as JSON"
+        value: ${{ jobs.validate-inputs.outputs.params }}
 
 jobs:
   # debug is used to help validate job inputs & vars
@@ -98,14 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.envName }}
     outputs:
-      repoName:           ${{ steps.format-inputs.outputs.repoName }}
-      envName:            ${{ steps.format-inputs.outputs.envName }}
-      templateRepo:       ${{ steps.format-inputs.outputs.templateRepo }}
-      teams:              ${{ steps.format-inputs.outputs.teams }}
-      enableIssue:        ${{ steps.format-inputs.outputs.enableIssue }}
-      enableProject:      ${{ steps.format-inputs.outputs.enableProject }}
-      enableSquashMerge:  ${{ steps.format-inputs.outputs.enableSquashMerge }}
-      enableForking:      ${{ steps.format-inputs.outputs.enableForking }}
+      params: ${{ steps.format-inputs.outputs.params }}
     steps:
       - name: Validate & Format Inputs
         id: format-inputs
@@ -116,7 +90,7 @@ jobs:
             // Set vars for this step
             let repoName = "${{ inputs.repoName }}"
             let templateRepo = "${{ inputs.templateRepo }}"
-            let teams = "${{ inputs.teams }}".trim()
+            let teams = "${{ env.DEFAULT_TEAMS }},${{ inputs.teams }}".trim()
             let enableIssue = ${{ inputs.enableIssue }}
             let enableProject = ${{ inputs.enableProject }}
             let enableSquashMerge = ${{ inputs.enableSquashMerge }}
@@ -132,23 +106,29 @@ jobs:
                 console.log(`Team [${teamSlug}] exists`)
                 exists = true
               }).catch((err) => {
-                console.log(`Team: [${teamSlug}] does not exist: ${err}`)
+                core.startGroup(`Team: [${teamSlug}] does not exist`)
+                console.log(err)
+                core.endGroup()
               })
               return exists
             }
 
-            async function teamMember(teamSlug) {
+            async function adminTeamMember(teamSlug) {
               var member = false
-              await github.rest.teams.getMembershipForUserInOrg({
-                org: context.payload.organization.login,
-                team_slug: teamSlug,
-                username: context.payload.sender.login,
-              }).then((res) => {
-                console.log(`[${context.payload.sender.login}] is a member of the [${teamSlug}] team`)
-                member = true
-              }).catch((err) => {
-                console.log(`Not a member of [${teamSlug}]: ${err}`)
-              })
+              if (teamSlug.endsWith('-admin') {
+                await github.rest.teams.getMembershipForUserInOrg({
+                  org: context.payload.organization.login,
+                  team_slug: teamSlug,
+                  username: context.payload.sender.login,
+                }).then((res) => {
+                  console.log(`[${context.payload.sender.login}] is a member of the [${teamSlug}] team`)
+                  member = true
+                }).catch((err) => {
+                  core.startGroup(`Not a member of [${teamSlug}]`)
+                  console.log(err)
+                  core.endGroup()
+                })
+              }
               return member
             }
 
@@ -166,11 +146,11 @@ jobs:
             console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
-            var adminTeams = await Promise.all(slugs.filter(e => e.endsWith('-admin')).map(e => teamMember(e)))
+            var adminTeams = await Promise.all(slugs.map(e => adminTeamMember(e)))
             if (!adminTeams.some(e => e)) {
               core.setFailed(`User is not a member of any admin teams.`);
             } else {
-              console.log(`User is a member of an admin team`)
+              core.notice(`Verified: User is a member of an admin team`)
             }
 
             // EACH TEAM EXISTS
@@ -178,13 +158,16 @@ jobs:
             if (!existingTeams.every(e => e)) {
               core.setFailed(`Not all teams entered are valid`);
             } else {
-              console.log("All teams entered exist")
-              core.setOutput('repoName', repoName); // FORMATTED
-              core.setOutput('envName', context.payload.organization.login);
-              core.setOutput('templateRepo', templateRepo);
-              core.setOutput('teams', slugs); // FORMATTED
-              core.setOutput('enableIssue', enableIssue);
-              core.setOutput('enableProject', enableProject);
-              core.setOutput('enableSquashMerge', enableSquashMerge);
-              core.setOutput('enableForking', enableForking);
+              core.notice("Verified: All teams entered exist")
+              var params = {
+                'repoName', repoName,
+                'envName', context.payload.organization.login,
+                'templateRepo', templateRepo,
+                'teams', slugs,
+                'enableIssue', enableIssue,
+                'enableProject', enableProject,
+                'enableSquashMerge', enableSquashMerge,
+                'enableForking', enableForking
+              }
+              core.setOutput('params', JSON.stringify(params));
             }

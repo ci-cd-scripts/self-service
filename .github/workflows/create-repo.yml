@@ -4,22 +4,14 @@ on:
   # Allows you to reuse this workflow from other workflows
   workflow_call:
     inputs:
-      repoName:
-        description: 'Repository Name'
+      params:
+        description: 'Input params as JSON'
         required: true
         type: string  # Can be: [boolean,number,string]
       description:
         description: 'Repository description'
         required: false
         default: "Created via IssueOps"
-        type: string
-      envName:
-        description: 'Environment Name'
-        required: true
-        type: string
-      templateRepo:
-        description: 'Template repo to use'
-        required: false
         type: string
     secrets:
       caller-token:
@@ -57,8 +49,8 @@ jobs:
         echo "$GITHUB_INPUTS"
     - name: Print workflow inputs
       run: |
-        echo "org: [${{ inputs.envName }}]"
-        echo "repoName: [${{ inputs.repoName }}]"
+        echo "org: [${{ fromJSON(inputs.params).envName }}]"
+        echo "repoName: [${{ fromJSON(inputs.params).repoName }}]"
 
   create-repo:
     runs-on: ubuntu-latest
@@ -70,8 +62,8 @@ jobs:
           github-token: ${{ secrets.caller-token }}
           script: |
             // Set vars for this step
-            let repoName = "${{ inputs.repoName }}"
-            let templateRepo = "${{ inputs.templateRepo }}"
+            let repoName = "${{ fromJSON(inputs.params).repoName }}"
+            let templateRepo = "${{ fromJSON(inputs.params).templateRepo }}"
             // Print vars to the log
             console.log("New repository name: " + repoName)
             console.log("Template Repository: " + templateRepo)            

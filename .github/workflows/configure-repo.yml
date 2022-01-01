@@ -97,7 +97,7 @@ jobs:
           script: |
             // Set vars for this step
             let repoName = "${{ inputs.repoName }}"
-            let teams = "${{ env.DEFAULT_TEAMS }},${{ inputs.teams }}".toLowerCase().split(' ').join('-')
+            let teams = "${{ inputs.teams }}"
             let enableIssue = ${{ inputs.enableIssue }}
             let enableProject = ${{ inputs.enableProject }}
             let enableSquashMerge = ${{ inputs.enableSquashMerge }}

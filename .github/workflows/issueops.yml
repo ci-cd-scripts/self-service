@@ -7,9 +7,7 @@ env:
   # ID of Milestone to group the issue in
   ISSUEOPS_MILESTONE: 1
   # Default teams added to all repos
-  DEFAULT_TEAMS: "org-admin,org-read"
-  # Admin teams with permission to all repos
-  ADMIN_TEAMS: "org-admin"
+  DEFAULT_TEAMS: "org"
 
 jobs:
   # Capture IssueOps inputs
@@ -29,12 +27,15 @@ jobs:
     
       - name: Debug context
         uses: actions/github-script@v5
+        env:
+          GITHUB_JOBS: ${{ jobs.toJSON }}
         with:
           script: |
             console.log(context)
             console.log(context.payload.issue.assignees)
             console.log(context.payload.issue.labels)
             console.log(context.payload.repository.topics)
+            console.log("${GITHUB_JOBS}")
             
       - name: Set inputs and add milestone
         id: set-inputs
@@ -136,9 +137,7 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
     needs: [reuse-validate-inputs]
     with:
-      repoName:           ${{ needs.reuse-validate-inputs.outputs.repoName }}
-      envName:            ${{ needs.reuse-validate-inputs.outputs.envName }}
-      templateRepo:       ${{ needs.reuse-validate-inputs.outputs.templateRepo }}
+      params: ${{ needs.reuse-validate-inputs.outputs.params }}
     secrets:
       caller-token: ${{ secrets.ORG_TOKEN }}
 
@@ -147,12 +146,6 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'issueops:configure-repo')
     needs: [reuse-validate-inputs, reuse-create-repo]
     with:
-      repoName:           ${{ needs.reuse-validate-inputs.outputs.repoName }}
-      envName:            ${{ needs.reuse-validate-inputs.outputs.envName }}
-      teams:              ${{ needs.reuse-validate-inputs.outputs.teams }}
-      enableIssue:        ${{ needs.reuse-validate-inputs.outputs.enableIssue }}
-      enableProject:      ${{ needs.reuse-validate-inputs.outputs.enableProject }}
-      enableSquashMerge:  ${{ needs.reuse-validate-inputs.outputs.enableSquashMerge }}
-      enableForking:      ${{ needs.reuse-validate-inputs.outputs.enableForking }}
+      params: ${{ needs.reuse-validate-inputs.outputs.params }}
     secrets:
       caller-token: ${{ secrets.ORG_TOKEN }}
