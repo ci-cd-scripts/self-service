@@ -54,7 +54,7 @@ jobs:
 
   create-repo:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.envName }}
+    environment: ${{ fromJSON(inputs.params).envName }}
     steps:
       - name: Configure GitHub repo
         uses: actions/github-script@v5
