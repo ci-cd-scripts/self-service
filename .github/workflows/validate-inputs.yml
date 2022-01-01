@@ -160,14 +160,14 @@ jobs:
             } else {
               core.notice("Verified: All teams entered exist")
               var params = {
-                'repoName', repoName,
-                'envName', context.payload.organization.login,
-                'templateRepo', templateRepo,
-                'teams', slugs,
-                'enableIssue', enableIssue,
-                'enableProject', enableProject,
-                'enableSquashMerge', enableSquashMerge,
-                'enableForking', enableForking
+                'repoName': repoName,
+                'envName': context.payload.organization.login,
+                'templateRepo': templateRepo,
+                'teams': slugs,
+                'enableIssue': enableIssue,
+                'enableProject': enableProject,
+                'enableSquashMerge': enableSquashMerge,
+                'enableForking': enableForking
               }
               core.setOutput('params', JSON.stringify(params));
             }
