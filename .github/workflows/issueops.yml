@@ -28,7 +28,7 @@ jobs:
       - name: Debug context
         uses: actions/github-script@v5
         env:
-          GITHUB_JOBS: ${{ jobs.toJSON }}
+          GITHUB_JOBS: ${{ toJSON(jobs) }}
         with:
           script: |
             console.log(context)

@@ -70,10 +70,10 @@ jobs:
             console.log("Creating repo from template")
 
             await github.rest.repos.createUsingTemplate({
-              template_owner: 'ci-cd-scripts',
+              template_owner: context.payload.organization.login,
               template_repo: templateRepo,
               name: repoName,
-              owner: 'ci-cd-scripts',
+              owner: context.payload.organization.login,
               description: "${{ inputs.description }}",
               include_all_branches: true,
               private: false
