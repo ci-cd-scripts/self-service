@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.issue.labels.*.name, 'issueops')
     outputs:
+      defaultTeams:       ${{ env.DEFAULT_TEAMS }}
       repoName:           ${{ steps.set-inputs.outputs.repoName }}
       envName:            ${{ steps.set-inputs.outputs.envName }}
       templateRepo:       ${{ steps.set-inputs.outputs.templateRepo }}
@@ -118,7 +119,7 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'issueops')
     needs: initialize
     with:
-      defaultTeams:       ${{ env.DEFAULT_TEAMS }}
+      defaultTeams:       ${{ needs.initialize.outputs.defaultTeams }}
       repoName:           ${{ needs.initialize.outputs.repoName }}
       envName:            ${{ needs.initialize.outputs.envName }}
       templateRepo:       ${{ needs.initialize.outputs.templateRepo }}
