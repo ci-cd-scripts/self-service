@@ -88,14 +88,15 @@ jobs:
           github-token: ${{ secrets.caller-token }}
           script: |
             // Set vars for this step
+            let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
+            let defaultTeams = "${{ env.DEFAULT_TEAMS }}".trim().split(",").filter(e => e.trim())
             let repoName = "${{ inputs.repoName }}"
             let templateRepo = "${{ inputs.templateRepo }}"
-            let teams = "${{ env.DEFAULT_TEAMS }},${{ inputs.teams }}".trim()
+            let teams = defaultTeams.concat("${{ inputs.teams }}".trim().split(",").filter(e => e.trim()))
             let enableIssue = ${{ inputs.enableIssue }}
             let enableProject = ${{ inputs.enableProject }}
             let enableSquashMerge = ${{ inputs.enableSquashMerge }}
             let enableForking = ${{ inputs.enableForking }}
-            let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
 
             async function teamExists(teamSlug) {
               var exists = false
@@ -142,7 +143,7 @@ jobs:
             }
 
             // FORMAT STANDARDIZED TEAM SLUGS
-            const slugs = teams.split(",").filter(e => e.trim()).flatMap(e => teamSlugs(e))
+            const slugs = teams.flatMap(e => teamSlugs(e))
             console.log(`Validating formatted team slugs: [${slugs}]`)
 
             // SENDER IS IN ADMIN TEAM
