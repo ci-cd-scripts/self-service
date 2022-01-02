@@ -72,7 +72,7 @@ jobs:
           script: |
             // Set vars for this step
             let repoName = "${{ fromJSON(inputs.params).repoName }}"
-            let teamArray = JSON.parse("${{ toJSON(fromJSON(inputs.params).teams) }}")
+            let teamArray = "${{ join(fromJSON(inputs.params).teams,',') }}".split(',')
             let enableIssue = ${{ fromJSON(inputs.params).enableIssue }}
             let enableProject = ${{ fromJSON(inputs.params).enableProject }}
             let enableSquashMerge = ${{ fromJSON(inputs.params).enableSquashMerge }}
