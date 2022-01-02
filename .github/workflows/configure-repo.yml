@@ -55,7 +55,7 @@ jobs:
       run: |
         echo "repoName: [${{ fromJSON(inputs.params).repoName }}]"
         echo "env: [${{ fromJSON(inputs.params).envName }}]"
-        echo "teams: [${{ fromJSON(inputs.params).teams }}]"
+        echo "teams: [${{ toJSON(fromJSON(inputs.params).teams) }}]"
         echo "enableIssue: [${{ fromJSON(inputs.params).enableIssue }}]"
         echo "enableProject: [${{ fromJSON(inputs.params).enableProject }}]"
         echo "enableSquashMerge: [${{ fromJSON(inputs.params).enableSquashMerge }}]"
@@ -72,14 +72,15 @@ jobs:
           script: |
             // Set vars for this step
             let repoName = "${{ fromJSON(inputs.params).repoName }}"
-            let teams = ${{ fromJSON(inputs.params).teams }}
+            let teamArray = ${{ fromJSON(inputs.params).teams }}
             let enableIssue = ${{ fromJSON(inputs.params).enableIssue }}
             let enableProject = ${{ fromJSON(inputs.params).enableProject }}
             let enableSquashMerge = ${{ fromJSON(inputs.params).enableSquashMerge }}
             let enableForking = ${{ fromJSON(inputs.params).enableForking }}
             // Print vars to the log
             console.log("Repo Name: " + repoName)
-            console.log("Teams: " + teams)
+            console.log("Teams: " + JSON.stringify(teamArray))
+            console.log(teamArray)
             console.log("Enable Issue: " + enableIssue)
             console.log("Enable Project: " + enableProject)
             console.log("Allow Squash Merge: " + enableSquashMerge)
@@ -115,7 +116,7 @@ jobs:
             })
             
             console.log("Setting repo permissions per team")
-            for (const team of teams) {
+            for (const team of teamArray) {
               var permission = 'pull'
               if (team.includes('admin')) {
                 permission = 'admin'

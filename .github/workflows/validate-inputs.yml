@@ -8,10 +8,15 @@ on:
   # Allows you to reuse this workflow from other workflows
   workflow_call:
     inputs:
+      defaultTeams:
+        description: 'Comma-separated list of default teams'
+        required: false
+        default: org
+        type: string  # Can be: [boolean,number,string]
       repoName:
         description: 'Repository Name'
         required: true
-        type: string  # Can be: [boolean,number,string]
+        type: string
       envName:
         description: 'Environment Name'
         required: true
@@ -21,7 +26,7 @@ on:
         required: false
         type: string
       teams:
-        description: 'Comma-separated list of team-slugs'
+        description: 'Comma-separated list of teams'
         required: true
         default: org-admin
         type: string
@@ -89,7 +94,7 @@ jobs:
           script: |
             // Set vars for this step
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
-            let defaultTeams = "${{ env.DEFAULT_TEAMS }}".trim().split(",").filter(e => e.trim())
+            let defaultTeams = "${{ inputs.defaultTeams }}".trim().split(",").filter(e => e.trim())
             let repoName = "${{ inputs.repoName }}"
             let templateRepo = "${{ inputs.templateRepo }}"
             let teams = defaultTeams.concat("${{ inputs.teams }}".trim().split(",").filter(e => e.trim()))

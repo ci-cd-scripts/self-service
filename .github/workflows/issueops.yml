@@ -118,6 +118,7 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'issueops')
     needs: initialize
     with:
+      defaultTeams:       ${{ env.DEFAULT_TEAMS }}
       repoName:           ${{ needs.initialize.outputs.repoName }}
       envName:            ${{ needs.initialize.outputs.envName }}
       templateRepo:       ${{ needs.initialize.outputs.templateRepo }}
