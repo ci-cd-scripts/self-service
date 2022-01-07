@@ -49,6 +49,10 @@ on:
     secrets:
       caller-token:
         required: true
+      app-issueops-pem:
+        required: true
+      app-issueops-id:
+        required: true
     # Map the workflow outputs to job outputs
     outputs:
       params:
@@ -90,8 +94,8 @@ jobs:
         id: get_token
         uses: machine-learning-apps/actions-app-token@master
         with:
-          APP_PEM: ${{ secrets.APP_ISSUEOPS_PEM }}
-          APP_ID: ${{ secrets.APP_ISSUEOPS_ID }}
+          APP_PEM: ${{ secrets.app-issueops-pem }}
+          APP_ID: ${{ secrets.app-issueops-id }}
       - name: Validate & Format Inputs
         id: format-inputs
         uses: actions/github-script@v5
