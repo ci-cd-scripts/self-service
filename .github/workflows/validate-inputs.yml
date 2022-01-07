@@ -47,8 +47,6 @@ on:
         required: true
         type: string
     secrets:
-      caller-token:
-        required: true
       app-issueops-pem:
         required: true
       app-issueops-id:
