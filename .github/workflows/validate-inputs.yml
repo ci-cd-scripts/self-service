@@ -206,17 +206,17 @@ jobs:
               const encryptedBytes = sodium.seal(messageBytes, keyBytes);
               // Base64 the encrypted secret
               const encrypted = Buffer.from(encryptedBytes).toString('base64');
-              await github.rest.actions.createOrUpdateEnvironmentSecret({
+              await `github.rest.actions.createOrUpdateEnvironment`Secret({
                 repository_id: context.payload.repository.id,
                 environment_name: params.envName,
                 secret_name: "ORG_TOKEN",
-                encrypted_value: value,
+                encrypted_value: encrypted,
                 key_id: pkey.data.key_id
               }).then((res) => {
                 console.log(`Successfully updated [ORG_TOKEN] secret in [${params.envName}] environment`)
               }).catch((err) => {
                 core.startGroup(`Unable to update env secret`)
-                console.log(err)
+                core.setFailed(err)
                 core.endGroup()
               })
             }
