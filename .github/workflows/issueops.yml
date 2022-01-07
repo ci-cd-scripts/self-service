@@ -89,7 +89,7 @@ jobs:
               repo: context.repo.repo,
               milestone: ${{ env.ISSUEOPS_MILESTONE }}
             }).then((res) => {
-              console.log(`Issue added to milestone.`)
+              console.log(`Issue added to milestone`)
               console.log(res)
               return true
             }).catch((err) => {

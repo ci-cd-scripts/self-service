@@ -86,11 +86,17 @@ jobs:
     outputs:
       params: ${{ steps.format-inputs.outputs.params }}
     steps:
+      - name: Get token
+        id: get_token
+        uses: machine-learning-apps/actions-app-token@master
+        with:
+          APP_PEM: ${{ secrets.APP_ISSUEOPS_PEM }}
+          APP_ID: ${{ secrets.APP_ISSUEOPS_ID }}
       - name: Validate & Format Inputs
         id: format-inputs
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.caller-token }}
+          github-token: ${{ steps.get_token.outputs.app_token }}
           script: |
             // Set vars for this step
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
@@ -143,7 +149,7 @@ jobs:
               if (teamAccessOptions.some(e => teamSlug.endsWith(e))) {
                 return teamSlug
               } else {
-                return teamAccessOptions.map(e => teamSlug + '-' + e);
+                return teamAccessOptions.map(e => teamSlug + '-' + e)
               }
             }
 
@@ -154,7 +160,7 @@ jobs:
             // SENDER IS IN ADMIN TEAM
             var adminTeams = await Promise.all(slugs.map(e => adminTeamMember(e)))
             if (!adminTeams.some(e => e)) {
-              core.setFailed(`User is not a member of any admin teams.`);
+              core.setFailed(`User is not a member of any admin teams`)
             } else {
               core.notice(`Verified: User is a member of an admin team`)
             }
@@ -162,9 +168,11 @@ jobs:
             // EACH TEAM EXISTS
             var existingTeams = await Promise.all(slugs.map(e => teamExists(e)))
             if (!existingTeams.every(e => e)) {
-              core.setFailed(`Not all teams entered are valid`);
+              core.setFailed(`Not all teams entered are valid`)
             } else {
               core.notice("Verified: All teams entered exist")
+
+              // Setting formatted output params
               var params = {
                 'repoName': repoName,
                 'envName': context.payload.organization.login,
@@ -175,5 +183,33 @@ jobs:
                 'enableSquashMerge': enableSquashMerge,
                 'enableForking': enableForking
               }
-              core.setOutput('params', JSON.stringify(params));
+              core.setOutput('params', JSON.stringify(params))
+
+              // Setting ORG_TOKEN as env secret
+              // https://docs.github.com/en/rest/reference/actions#create-or-update-an-environment-secret
+              const sodium = require('tweetsodium');
+              const key = "base64-encoded-public-key";
+              const value = "${{ steps.get_token.outputs.app_token }}";
+              core.setSecret(value)
+              // Convert the message and key to Uint8Array's (Buffer implements that interface)
+              const messageBytes = Buffer.from(value);
+              const keyBytes = Buffer.from(key, 'base64');
+              // Encrypt using LibSodium.
+              const encryptedBytes = sodium.seal(messageBytes, keyBytes);
+              // Base64 the encrypted secret
+              const encrypted = Buffer.from(encryptedBytes).toString('base64');
+              await github.rest.actions.createOrUpdateEnvironmentSecret({
+                repository_id: github.event.repository.id,
+                environment_name: params.envName,
+                secret_name: "ORG_TOKEN",
+                encrypted_value: value,
+                key_id: key
+              }).then((res) => {
+                console.log(`Successfully updated [ORG_TOKEN] secret in [${params.envName}] environment`)
+                member = true
+              }).catch((err) => {
+                core.startGroup(`Unable to update env secret`)
+                console.log(err)
+                core.endGroup()
+              })
             }

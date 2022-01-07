@@ -95,7 +95,7 @@ jobs:
               has_projects: enableProject,
               allow_squash_merge: enableSquashMerge
             }).then((res) => {
-              console.log(`Repo updated.`)
+              console.log(`Repo updated`)
             }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
             })
@@ -110,7 +110,7 @@ jobs:
               "required_pull_request_reviews": {"dismissal_restrictions": {"users":[], "teams":[]}, "dismiss_stale_reviews": false, "require_code_owner_reviews": true, "required_approving_review_count": 1},
               "restrictions" : { "users": [], "teams": [], "apps": [] }
             }).then((res) => {
-              console.log(`Repo branch permissions updated.`)
+              console.log(`Repo branch permissions updated`)
             }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`);
             })
@@ -127,7 +127,6 @@ jobs:
               } else if (team.includes('triage')) {
                 permission = 'triage'
               }
-              console.log("Team: [" + team + "] - Permission: [" + permission + "]")
               await github.rest.teams.addOrUpdateRepoPermissionsInOrg({
                 org: context.payload.organization.login,
                 owner: context.payload.organization.login,
@@ -135,7 +134,7 @@ jobs:
                 team_slug: team,
                 permission: permission
               }).then((res) => {
-                console.log(`Team added to repo.`)
+                console.log(`Success: Add [${team}] team to repo with [${permission}] permission`)
               }).catch((err) => {
                 core.setFailed(`Action failed with error ${err}`);
               })
