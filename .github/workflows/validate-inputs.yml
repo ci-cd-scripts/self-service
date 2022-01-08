@@ -117,8 +117,8 @@ jobs:
             async function teamExists(teamSlug) {
               var exists = false
               await github.rest.teams.getByName({
-                "org": context.payload.organization.login,
-                "team_slug": teamSlug
+                org: context.payload.organization.login,
+                team_slug: teamSlug
               }).then((res) => {
                 console.log(`Team [${teamSlug}] exists`)
                 exists = true
@@ -179,33 +179,33 @@ jobs:
 
               // Setting formatted output params
               var params = {
-                'repoName': repoName,
-                'envName': context.payload.organization.login,
-                'templateRepo': templateRepo,
-                'teams': slugs,
-                'enableIssue': enableIssue,
-                'enableProject': enableProject,
-                'enableSquashMerge': enableSquashMerge,
-                'enableForking': enableForking
+                repoName: repoName,
+                envName: context.payload.organization.login,
+                templateRepo: templateRepo,
+                teams: slugs,
+                enableIssue: enableIssue,
+                enableProject: enableProject,
+                enableSquashMerge: enableSquashMerge,
+                enableForking: enableForking
               }
               core.setOutput('params', JSON.stringify(params))
 
               // Setting ORG_TOKEN as env secret
               // https://docs.github.com/en/rest/reference/actions#create-or-update-an-environment-secret
-              const sodium = require('tweetsodium');
+              const sodium = require('tweetsodium')
               const pkey = await github.rest.actions.getEnvironmentPublicKey({
                 repository_id: context.payload.repository.id,
                 environment_name: params.envName,
               })
-              const value = "${{ steps.get_token.outputs.app_token }}";
+              const value = "${{ steps.get_token.outputs.app_token }}"
               core.setSecret(value)
               // Convert the message and public key to Uint8Array's (Buffer implements that interface)
-              const messageBytes = Buffer.from(value);
-              const keyBytes = Buffer.from(pkey.data.key, 'base64');
+              const messageBytes = Buffer.from(value)
+              const keyBytes = Buffer.from(pkey.data.key, 'base64')
               // Encrypt using LibSodium.
-              const encryptedBytes = sodium.seal(messageBytes, keyBytes);
+              const encryptedBytes = sodium.seal(messageBytes, keyBytes)
               // Base64 the encrypted secret
-              const encrypted = Buffer.from(encryptedBytes).toString('base64');
+              const encrypted = Buffer.from(encryptedBytes).toString('base64')
               await github.rest.actions.createOrUpdateEnvironmentSecret({
                 repository_id: context.payload.repository.id,
                 environment_name: params.envName,

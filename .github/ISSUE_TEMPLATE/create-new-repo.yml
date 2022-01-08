@@ -1,5 +1,5 @@
 # https://gh-community.github.io/issue-template-feedback/structured/#url-query-parameter-prefills
-# Test the above params to create pre-filled issues via URL only ;)
+# Test the above params to create pre-filled issues via URL only
 name: Create repositories using IssueOps
 description: This IssueOps takes the input from an user to create a repository based on Template Repository and safe settings
 title: "[IssueOps]: "

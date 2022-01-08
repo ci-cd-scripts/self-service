@@ -50,14 +50,14 @@ jobs:
             let enableSquashMerge = bodySplit[22].includes("X")
             let enableForking = bodySplit[26].includes("X")
             // Set vars for subsequent steps
-            core.setOutput('repoName', repoName);
-            core.setOutput('envName', context.payload.organization.login);
-            core.setOutput('templateRepo', templateRepo);
-            core.setOutput('teams', teams);
-            core.setOutput('enableIssue', enableIssue);
-            core.setOutput('enableProject', enableProject);
-            core.setOutput('enableSquashMerge', enableSquashMerge);
-            core.setOutput('enableForking', enableForking);
+            core.setOutput('repoName', repoName)
+            core.setOutput('envName', context.payload.organization.login)
+            core.setOutput('templateRepo', templateRepo)
+            core.setOutput('teams', teams)
+            core.setOutput('enableIssue', enableIssue)
+            core.setOutput('enableProject', enableProject)
+            core.setOutput('enableSquashMerge', enableSquashMerge)
+            core.setOutput('enableForking', enableForking)
             // Print vars to the log
             // DON'T PRINT ANYTHING UNTIL AFTER INPUTS ARE VALIDATED & FORMATTED
             // console.log("New repository name: " + repoName)
@@ -76,10 +76,11 @@ jobs:
               repo: context.repo.repo,
               body: 'The [[' + context.workflow + ' #' + context.runNumber + '](' + context.payload.repository.html_url + '/actions/runs/' + context.runId + ')] workflow has picked up this issue'
             }).then((res) => {
-              console.log(`Comment added to issue. Link: ${res.html_url}`)
-              return true
+              core.startGroup(`Comment added to issue. Link: ${res.data.html_url}`)
+              console.log(res)
+              core.endGroup()
             }).catch((err) => {
-              core.setFailed(`Action failed with error ${err}`);
+              core.setFailed(`Action failed with error ${err}`)
             })
             
             console.log("Adding issue to Milestone ID: [${{ env.ISSUEOPS_MILESTONE }}]")
@@ -89,11 +90,11 @@ jobs:
               repo: context.repo.repo,
               milestone: ${{ env.ISSUEOPS_MILESTONE }}
             }).then((res) => {
-              console.log(`Issue added to milestone`)
+              core.startGroup(`Issue added to milestone [${res.data.milestone.title}]. Link: ${res.data.milestone.html_url}`)
               console.log(res)
-              return true
+              core.endGroup()
             }).catch((err) => {
-              core.setFailed(`Action failed with error ${err}`);
+              core.setFailed(`Action failed with error ${err}`)
             })
 
   # debug:
