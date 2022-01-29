@@ -81,7 +81,7 @@ jobs:
             // Print vars to the log
             console.log("Repo Name: " + repoName)
             console.log("Teams: " + JSON.stringify(teamArray))
-            console.log("Enable Issue: " + enableIssue + " - Type: " + typeof enableIssue)
+            console.log("Enable Issue: " + enableIssue)
             console.log("Enable Project: " + enableProject)
             console.log("Allow Squash Merge: " + enableSquashMerge)
             console.log("Allow Forking: " + enableForking)
