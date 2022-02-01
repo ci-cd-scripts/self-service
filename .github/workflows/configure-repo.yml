@@ -70,7 +70,7 @@ jobs:
             }).then((res) => {
               console.log(`Repo updated`)
             }).catch((err) => {
-              core.setFailed(`Action failed with error ${err}`)
+              core.warning(`Action failed with error ${err}`)
             })
             
             console.log("Updating repo branch permissions")
@@ -85,7 +85,7 @@ jobs:
             }).then((res) => {
               console.log(`Repo branch permissions updated`)
             }).catch((err) => {
-              core.setFailed(`Action failed with error ${err}`)
+              core.warning(`Action failed with error ${err}`)
             })
             
             console.log("Setting repo permissions per team")
