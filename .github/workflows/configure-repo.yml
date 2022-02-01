@@ -11,31 +11,6 @@ on:
     secrets:
       caller-token:
         required: true
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-    inputs:
-      repoName:
-        description: 'Repository Name'
-        required: true
-      envName:
-        description: 'Environment Name'
-        required: true
-      teams:
-        description: 'Comma-separated list of team-slugs'
-        required: true
-        default: org-admin
-      enableIssue:
-        description: 'Enable Repo Issues?'
-        required: true
-      enableProject:
-        description: 'Enable Repo Projects?'
-        required: true
-      enableSquashMerge:
-        description: 'Enable Repo Squash Merging?'
-        required: true
-      enableForking:
-        description: 'Enable Repo Forking?'
-        required: true
 
 jobs:
   # debug is used to help validate job inputs & vars
@@ -60,7 +35,6 @@ jobs:
         echo "enableIssue: [${{ fromJSON(inputs.params).enableIssue }}]"
         echo "enableProject: [${{ fromJSON(inputs.params).enableProject }}]"
         echo "enableSquashMerge: [${{ fromJSON(inputs.params).enableSquashMerge }}]"
-        echo "enableForking: [${{ fromJSON(inputs.params).enableForking }}]"
 
   configure-repo:
     runs-on: ubuntu-latest
@@ -77,7 +51,6 @@ jobs:
             let enableIssue = ${{ fromJSON(inputs.params).enableIssue }}
             let enableProject = ${{ fromJSON(inputs.params).enableProject }}
             let enableSquashMerge = ${{ fromJSON(inputs.params).enableSquashMerge }}
-            let enableForking = ${{ fromJSON(inputs.params).enableForking }}
 
             // Print vars to the log
             console.log("Repo Name: " + repoName)
@@ -85,20 +58,15 @@ jobs:
             console.log("Enable Issue: " + enableIssue)
             console.log("Enable Project: " + enableProject)
             console.log("Allow Squash Merge: " + enableSquashMerge)
-            console.log("Allow Forking: " + enableForking)
             
             console.log("Configuring repo")
-
-            // UPDATE enableForking TO ONLY BE USED WHEN REPO VISIBILITY == PRIVATE
             
             await github.rest.repos.update({
               owner: context.payload.organization.login,
-              private: false,
               repo: repoName,
               has_issues: enableIssue,
               has_projects: enableProject,
-              allow_squash_merge: enableSquashMerge,
-              allow_forking: enableForking
+              allow_squash_merge: enableSquashMerge
             }).then((res) => {
               console.log(`Repo updated`)
             }).catch((err) => {

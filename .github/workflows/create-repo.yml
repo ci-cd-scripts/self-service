@@ -16,22 +16,6 @@ on:
     secrets:
       caller-token:
         required: true
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-    inputs:
-      repoName:
-        description: 'Repository Name'
-        required: true
-      description:
-        description: 'Repository description'
-        required: false
-        default: "Created via IssueOps"
-      envName:
-        description: 'Environment Name'
-        required: true
-      templateRepo:
-        description: 'Template repo to use'
-        required: false
 
 jobs:
   # debug is used to help validate job inputs & vars
@@ -51,6 +35,7 @@ jobs:
       run: |
         echo "org: [${{ fromJSON(inputs.params).envName }}]"
         echo "repoName: [${{ fromJSON(inputs.params).repoName }}]"
+        echo "privateRepo: [${{ fromJSON(inputs.params).privateRepo }}]"
 
   create-repo:
     runs-on: ubuntu-latest
@@ -64,11 +49,13 @@ jobs:
             // Set vars for this step
             let repoName = "${{ fromJSON(inputs.params).repoName }}"
             let templateRepo = "${{ fromJSON(inputs.params).templateRepo }}"
+            let privateRepo = ${{ fromJSON(inputs.params).privateRepo }}
             // Print vars to the log
             console.log("Repo Name: " + repoName)
-            console.log("Template Repository: " + templateRepo)            
+            console.log("Template Repository: " + templateRepo)     
+            console.log("Private Repo: " + privateRepo)
+       
             console.log("Creating repo from template")
-
             await github.rest.repos.createUsingTemplate({
               template_owner: context.payload.organization.login,
               template_repo: templateRepo,
@@ -76,7 +63,7 @@ jobs:
               owner: context.payload.organization.login,
               description: "${{ inputs.description }}",
               include_all_branches: true,
-              private: false
+              private: privateRepo
             }).then((res) => {
               console.log(`Repo created. Link: ${res.data.html_url}`)
             }).catch((err) => {

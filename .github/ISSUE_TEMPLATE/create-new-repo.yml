@@ -3,7 +3,7 @@
 name: Create repositories using IssueOps
 description: This IssueOps takes the input from an user to create a repository based on Template Repository and safe settings
 title: "[IssueOps]: "
-labels: ["issueops", "issueops:new-repo", "issueops:create-repo", "issueops:configure-repo"]
+labels: ["issueops", "issueops:create-repo", "issueops:configure-repo"]
 assignees:
   - KevinMSampson
 body:
@@ -68,10 +68,10 @@ body:
           required: false
      
   - type: checkboxes
-    id: enable-forking
+    id: private-repo
     attributes:
-      label: Allow forking
-      description: Do you want to enable forking?
+      label: Private Repository
+      description: Do you want to make a private repository? This may limit some features available depending on your Plan.
       options:
-        - label: Yes, I want to allow forking
+        - label: Yes, I want a private repo
           required: false

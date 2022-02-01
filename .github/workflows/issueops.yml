@@ -23,7 +23,7 @@ jobs:
       enableIssue:        ${{ steps.set-inputs.outputs.enableIssue }}
       enableProject:      ${{ steps.set-inputs.outputs.enableProject }}
       enableSquashMerge:  ${{ steps.set-inputs.outputs.enableSquashMerge }}
-      enableForking:      ${{ steps.set-inputs.outputs.enableForking }}
+      privateRepo:        ${{ steps.set-inputs.outputs.privateRepo }}
     steps:
     
       - name: Debug context
@@ -48,7 +48,7 @@ jobs:
             let enableIssue = bodySplit[14].includes("X")
             let enableProject = bodySplit[18].includes("X")
             let enableSquashMerge = bodySplit[22].includes("X")
-            let enableForking = bodySplit[26].includes("X")
+            let privateRepo = bodySplit[26].includes("X")
             // Set vars for subsequent steps
             core.setOutput('repoName', repoName)
             core.setOutput('envName', context.payload.organization.login)
@@ -57,17 +57,9 @@ jobs:
             core.setOutput('enableIssue', enableIssue)
             core.setOutput('enableProject', enableProject)
             core.setOutput('enableSquashMerge', enableSquashMerge)
-            core.setOutput('enableForking', enableForking)
-            // Print vars to the log
-            // DON'T PRINT ANYTHING UNTIL AFTER INPUTS ARE VALIDATED & FORMATTED
-            // console.log("New repository name: " + repoName)
-            // console.log("Using Environment: " + context.payload.organization.login)
-            // console.log("Template Repository: " + templateRepo)
-            // console.log("Teams: " + teams)
-            // console.log("Enable Issue: " + enableIssue)
-            // console.log("Enable Project: " + enableProject)
-            // console.log("Allow Squash Merge: " + enableSquashMerge)
-            // console.log("Allow Forking: " + enableForking)
+            core.setOutput('privateRepo', privateRepo)
+            // DON'T PRINT/USE ANYTHING UNTRUSTED UNTIL AFTER INPUTS ARE VALIDATED & FORMATTED
+            // https://securitylab.github.com/research/github-actions-untrusted-input/
             
             console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
             await github.rest.issues.createComment({
@@ -112,7 +104,7 @@ jobs:
   #       echo "enableIssue: [${{ needs.initialize.outputs.enableIssue }}]"
   #       echo "enableProject: [${{ needs.initialize.outputs.enableProject }}]"
   #       echo "enableSquashMerge: [${{ needs.initialize.outputs.enableSquashMerge }}]"
-  #       echo "enableForking: [${{ needs.initialize.outputs.enableForking }}]"
+  #       echo "privateRepo: [${{ needs.initialize.outputs.privateRepo }}]"
 
   # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
   reuse-validate-inputs:
@@ -128,7 +120,7 @@ jobs:
       enableIssue:        ${{ needs.initialize.outputs.enableIssue }}
       enableProject:      ${{ needs.initialize.outputs.enableProject }}
       enableSquashMerge:  ${{ needs.initialize.outputs.enableSquashMerge }}
-      enableForking:      ${{ needs.initialize.outputs.enableForking }}
+      privateRepo:        ${{ needs.initialize.outputs.privateRepo }}
     secrets:
       app-issueops-pem: ${{ secrets.APP_ISSUEOPS_PEM }}
       app-issueops-id: ${{ secrets.APP_ISSUEOPS_ID }}

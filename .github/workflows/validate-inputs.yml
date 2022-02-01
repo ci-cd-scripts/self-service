@@ -42,8 +42,8 @@ on:
         description: 'Enable Repo Squash Merging?'
         required: true
         type: string
-      enableForking:
-        description: 'Enable Repo Forking?'
+      privateRepo:
+        description: 'Make Repository Private?'
         required: true
         type: string
     secrets:
@@ -58,21 +58,47 @@ on:
         value: ${{ jobs.validate-inputs.outputs.params }}
 
 jobs:
+  # debug is used to help validate job inputs & vars
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Print payload
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ steps.get-token.outputs.app_token }}
+        script: |
+          console.log(context)
+          console.log(context.payload)
+          console.log(context.payload.repository)
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+        GITHUB_INPUTS: ${{ toJson(inputs) }}
+      run: |
+        echo "GITHUB_CONTEXT:"
+        echo "$GITHUB_CONTEXT"
+        echo "GITHUB_INPUTS:"
+        echo "$GITHUB_INPUTS"
+    - name: Print workflow inputs
+      run: |
+        echo "repoName: [${{ inputs.repoName }}]"
+        echo "env: [${{ inputs.envName }}]"
+        echo "templateRepo: [${{ inputs.templateRepo }}]"
+        echo "teams: [${{ inputs.teams }}]"
+        echo "enableIssue: [${{ inputs.enableIssue }}]"
+        echo "enableProject: [${{ inputs.enableProject }}]"
+        echo "enableSquashMerge: [${{ inputs.enableSquashMerge }}]"
+        echo "privateRepo: [${{ inputs.privateRepo }}]"
+
   validate-inputs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.envName }}
     outputs:
       params: ${{ steps.format-inputs.outputs.params }}
     steps:
-      # - name: Get token
-      #   id: get-token
-      #   uses: machine-learning-apps/actions-app-token@master
-      #   with:
-      #     APP_PEM: ${{ secrets.app-issueops-pem }}
-      #     APP_ID: ${{ secrets.app-issueops-id }}
-      - name: Install @octokit/rest & @octokit/auth-app
+      - name: Install @octokit/rest @octokit/auth-app tweetsodium
         run: |
-          npm install @octokit/rest @octokit/auth-app
+          npm install @octokit/rest @octokit/auth-app tweetsodium
       - name: Get token using github-script
         id: get-token
         uses: actions/github-script@v5
@@ -95,7 +121,7 @@ jobs:
             });
             const app_installation = await appOctokit.rest.apps.getRepoInstallation({
               owner: context.payload.organization.login,
-              repo: context.payload.repository.name
+              repo: github.event.repository.name
             });
             const { token } = await appOctokit.auth({
               type: "installation",
@@ -107,9 +133,6 @@ jobs:
 
             // Revoke Access Token in POST-RUN job (#9)
             // github.rest.apps.revokeInstallationAccessToken();
-      - name: Install tweetsodium
-        run: |
-          npm install tweetsodium
       - name: Validate & Format Inputs
         id: format-inputs
         uses: actions/github-script@v5
@@ -125,7 +148,7 @@ jobs:
             let enableIssue = ${{ inputs.enableIssue }}
             let enableProject = ${{ inputs.enableProject }}
             let enableSquashMerge = ${{ inputs.enableSquashMerge }}
-            let enableForking = ${{ inputs.enableForking }}
+            let privateRepo = ${{ inputs.privateRepo }}
 
             async function teamExists(teamSlug) {
               var exists = false
@@ -199,7 +222,7 @@ jobs:
                 enableIssue: enableIssue,
                 enableProject: enableProject,
                 enableSquashMerge: enableSquashMerge,
-                enableForking: enableForking
+                privateRepo: privateRepo
               }
               core.setOutput('params', JSON.stringify(params))
 
@@ -233,36 +256,3 @@ jobs:
                 core.endGroup()
               })
             }
-  # debug is used to help validate job inputs & vars
-  debug:
-    runs-on: ubuntu-latest
-    needs: validate-inputs
-    if: failure()
-    steps:
-    - name: Print payload
-      uses: actions/github-script@v5
-      with:
-        github-token: ${{ steps.get-token.outputs.app_token }}
-        script: |
-          console.log(context)
-          console.log(context.payload)
-          console.log(context.payload.repository)
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-        GITHUB_INPUTS: ${{ toJson(inputs) }}
-      run: |
-        echo "GITHUB_CONTEXT:"
-        echo "$GITHUB_CONTEXT"
-        echo "GITHUB_INPUTS:"
-        echo "$GITHUB_INPUTS"
-    - name: Print workflow inputs
-      run: |
-        echo "repoName: [${{ inputs.repoName }}]"
-        echo "env: [${{ inputs.envName }}]"
-        echo "templateRepo: [${{ inputs.templateRepo }}]"
-        echo "teams: [${{ inputs.teams }}]"
-        echo "enableIssue: [${{ inputs.enableIssue }}]"
-        echo "enableProject: [${{ inputs.enableProject }}]"
-        echo "enableSquashMerge: [${{ inputs.enableSquashMerge }}]"
-        echo "enableForking: [${{ inputs.enableForking }}]"
