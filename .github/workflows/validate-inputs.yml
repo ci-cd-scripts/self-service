@@ -62,14 +62,6 @@ jobs:
   debug:
     runs-on: ubuntu-latest
     steps:
-    - name: Print payload
-      uses: actions/github-script@v5
-      with:
-        github-token: ${{ steps.get-token.outputs.app_token }}
-        script: |
-          console.log(context)
-          console.log(context.payload)
-          console.log(context.payload.repository)
     - name: Dump GitHub context
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
