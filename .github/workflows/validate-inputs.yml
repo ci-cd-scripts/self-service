@@ -113,7 +113,7 @@ jobs:
             });
             const app_installation = await appOctokit.rest.apps.getRepoInstallation({
               owner: context.payload.organization.login,
-              repo: github.event.repository.name
+              repo: context.payload.repository.name
             });
             const { token } = await appOctokit.auth({
               type: "installation",
