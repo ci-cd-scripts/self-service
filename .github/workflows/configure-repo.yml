@@ -78,6 +78,7 @@ jobs:
             let enableProject = ${{ fromJSON(inputs.params).enableProject }}
             let enableSquashMerge = ${{ fromJSON(inputs.params).enableSquashMerge }}
             let enableForking = ${{ fromJSON(inputs.params).enableForking }}
+
             // Print vars to the log
             console.log("Repo Name: " + repoName)
             console.log("Teams: " + JSON.stringify(teamArray))
@@ -87,6 +88,9 @@ jobs:
             console.log("Allow Forking: " + enableForking)
             
             console.log("Configuring repo")
+
+            // UPDATE enableForking TO ONLY BE USED WHEN REPO VISIBILITY == PRIVATE
+            
             await github.rest.repos.update({
               owner: context.payload.organization.login,
               private: false,

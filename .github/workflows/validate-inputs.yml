@@ -58,42 +58,55 @@ on:
         value: ${{ jobs.validate-inputs.outputs.params }}
 
 jobs:
-  # debug is used to help validate job inputs & vars
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Dump GitHub context
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-        GITHUB_INPUTS: ${{ toJson(inputs) }}
-      run: |
-        echo "GITHUB_CONTEXT:"
-        echo "$GITHUB_CONTEXT"
-        echo "GITHUB_INPUTS:"
-        echo "$GITHUB_INPUTS"
-    - name: Print workflow inputs
-      run: |
-        echo "repoName: [${{ inputs.repoName }}]"
-        echo "env: [${{ inputs.envName }}]"
-        echo "templateRepo: [${{ inputs.templateRepo }}]"
-        echo "teams: [${{ inputs.teams }}]"
-        echo "enableIssue: [${{ inputs.enableIssue }}]"
-        echo "enableProject: [${{ inputs.enableProject }}]"
-        echo "enableSquashMerge: [${{ inputs.enableSquashMerge }}]"
-        echo "enableForking: [${{ inputs.enableForking }}]"
-
   validate-inputs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.envName }}
     outputs:
       params: ${{ steps.format-inputs.outputs.params }}
     steps:
-      - name: Get token
-        id: get_token
-        uses: machine-learning-apps/actions-app-token@master
+      # - name: Get token
+      #   id: get-token
+      #   uses: machine-learning-apps/actions-app-token@master
+      #   with:
+      #     APP_PEM: ${{ secrets.app-issueops-pem }}
+      #     APP_ID: ${{ secrets.app-issueops-id }}
+      - name: Install @octokit/rest & @octokit/auth-app
+        run: |
+          npm install @octokit/rest @octokit/auth-app
+      - name: Get token using github-script
+        id: get-token
+        uses: actions/github-script@v5
         with:
-          APP_PEM: ${{ secrets.app-issueops-pem }}
-          APP_ID: ${{ secrets.app-issueops-id }}
+          script: |
+            // Login as GitHub App
+            // https://octokit.github.io/rest.js/v18#authentication
+            const { Octokit } = require("@octokit/rest");
+            const { createAppAuth } = require("@octokit/auth-app");
+
+            const appOctokit = new Octokit({
+              authStrategy: createAppAuth,
+              auth: {
+                appId: '${{ secrets.app-issueops-id }}',
+                privateKey: Buffer.from('${{ secrets.app-issueops-pem }}', 'base64').toString(),  // Base64 encoded secret
+                // optional: this will make appOctokit authenticate as app (JWT)
+                //           or installation (access token), depending on the request URL
+                // installationId: '${{ secrets.app-issueops-install-id }}'
+              }
+            });
+            const app_installation = await appOctokit.rest.apps.getRepoInstallation({
+              owner: context.payload.organization.login,
+              repo: context.payload.repository.name
+            });
+            const { token } = await appOctokit.auth({
+              type: "installation",
+              // defaults to `options.auth.installationId` set in the constructor
+              installationId: app_installation.data.id
+            });
+            // core.setSecret(token)  // Not needed. Set by Octokit
+            core.setOutput('app_token', token)
+
+            // Revoke Access Token in POST-RUN job (#9)
+            // github.rest.apps.revokeInstallationAccessToken();
       - name: Install tweetsodium
         run: |
           npm install tweetsodium
@@ -101,7 +114,7 @@ jobs:
         id: format-inputs
         uses: actions/github-script@v5
         with:
-          github-token: ${{ steps.get_token.outputs.app_token }}
+          github-token: ${{ steps.get-token.outputs.app_token }}
           script: |
             // Set vars for this step
             let teamAccessOptions = ["admin", "maintain", "write", "triage", "read"]
@@ -197,7 +210,7 @@ jobs:
                 repository_id: context.payload.repository.id,
                 environment_name: params.envName,
               })
-              const value = "${{ steps.get_token.outputs.app_token }}"
+              const value = "${{ steps.get-token.outputs.app_token }}"
               core.setSecret(value)
               // Convert the message and public key to Uint8Array's (Buffer implements that interface)
               const messageBytes = Buffer.from(value)
@@ -220,3 +233,28 @@ jobs:
                 core.endGroup()
               })
             }
+  # debug is used to help validate job inputs & vars
+  debug:
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+    if: failure()
+    steps:
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+        GITHUB_INPUTS: ${{ toJson(inputs) }}
+      run: |
+        echo "GITHUB_CONTEXT:"
+        echo "$GITHUB_CONTEXT"
+        echo "GITHUB_INPUTS:"
+        echo "$GITHUB_INPUTS"
+    - name: Print workflow inputs
+      run: |
+        echo "repoName: [${{ inputs.repoName }}]"
+        echo "env: [${{ inputs.envName }}]"
+        echo "templateRepo: [${{ inputs.templateRepo }}]"
+        echo "teams: [${{ inputs.teams }}]"
+        echo "enableIssue: [${{ inputs.enableIssue }}]"
+        echo "enableProject: [${{ inputs.enableProject }}]"
+        echo "enableSquashMerge: [${{ inputs.enableSquashMerge }}]"
+        echo "enableForking: [${{ inputs.enableForking }}]"
