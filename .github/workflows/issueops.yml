@@ -60,8 +60,21 @@ jobs:
             core.setOutput('privateRepo', privateRepo)
             // DON'T PRINT/USE ANYTHING UNTRUSTED UNTIL AFTER INPUTS ARE VALIDATED & FORMATTED
             // https://securitylab.github.com/research/github-actions-untrusted-input/
+
+            console.log("Locking issue " + context.issue.number + ": '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
+            await github.rest.issues.lock({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            }).then((res) => {
+              core.startGroup(`Issue locked. Link: ${res.data.html_url}`)
+              console.log(res)
+              core.endGroup()
+            }).catch((err) => {
+              core.setFailed(`Action failed with error ${err}`)
+            })
             
-            console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
+            console.log("Commenting on issue " + context.issue.number + ": '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -75,7 +88,7 @@ jobs:
               core.setFailed(`Action failed with error ${err}`)
             })
             
-            console.log("Adding issue to Milestone ID: [${{ env.ISSUEOPS_MILESTONE }}]")
+            console.log("Adding issue #" + context.issue.number + " to Milestone ID: [${{ env.ISSUEOPS_MILESTONE }}]")
             await github.rest.issues.update({
               issue_number: context.issue.number,
               owner: context.repo.owner,
