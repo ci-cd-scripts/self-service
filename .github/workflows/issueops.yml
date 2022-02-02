@@ -89,6 +89,19 @@ jobs:
               core.setFailed(`Action failed with error ${err}`)
             })
 
+            console.log("Locking issue #" + context.issue.number + ": '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
+            await github.rest.issues.lock({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            }).then((res) => {
+              core.startGroup(`Issue locked.`)
+              console.log(res)
+              core.endGroup()
+            }).catch((err) => {
+              core.setFailed(`Action failed with error ${err}`)
+            })
+
   # debug:
   #   if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
   #   needs: initialize
