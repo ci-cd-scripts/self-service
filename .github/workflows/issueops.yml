@@ -40,7 +40,7 @@ jobs:
         uses: actions/github-script@v5
         with:
           script: |
-            bodySplit = context.payload.issue.body.split("\n")
+            bodySplit = context.payload.issue.body.split(/\r?\n/)
             // Set vars for this step
             let repoName = bodySplit[2]
             let templateRepo = bodySplit[6]
