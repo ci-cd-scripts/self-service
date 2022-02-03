@@ -88,7 +88,8 @@ jobs:
             }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`)
             })
-
+            
+            /* GitHub Apps don't have repo write access and can't comment on a locked issue
             console.log("Locking issue #" + context.issue.number + ": '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
             await github.rest.issues.lock({
               issue_number: context.issue.number,
@@ -101,6 +102,7 @@ jobs:
             }).catch((err) => {
               core.setFailed(`Action failed with error ${err}`)
             })
+            */
 
   # debug:
   #   if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
