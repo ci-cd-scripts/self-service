@@ -1,6 +1,6 @@
 # self-service
 
-[![IssueOps Handler](https://github.com/ci-cd-scripts/self-service/actions/workflows/issueops.yml/badge.svg)](https://github.com/ci-cd-scripts/self-service/actions/workflows/issueops.yml)
+[![Handler](https://github.com/ci-cd-scripts/self-service/actions/workflows/handler.yml/badge.svg?branch=main)](https://github.com/ci-cd-scripts/self-service/actions/workflows/handler.yml)
 
 ---
 
