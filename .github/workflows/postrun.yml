@@ -1,3 +1,5 @@
+name: Postrun
+
 on:
   workflow_run:
     workflows: [ Handler ]
