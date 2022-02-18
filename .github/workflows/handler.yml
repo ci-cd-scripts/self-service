@@ -1,0 +1,187 @@
+name: Handler
+on:
+  issues:
+    types: [ opened, demilestoned ]
+  workflow_dispatch:
+    inputs:
+      repoName:
+        description: 'Repository Name'
+        required: true
+      templateRepo:
+        description: 'Template repo to use'
+        required: false
+        default: string
+      teams:
+        description: 'Comma-separated list of teams'
+        required: true
+        default: org-admin
+      privateRepo:
+        description: 'Make Repository Private? [true]'
+        required: false
+        default: false
+
+env:
+  # ID of Milestone to group the issue in
+  ISSUEOPS_MILESTONE: 1
+  # Default teams added to all repos
+  DEFAULT_TEAMS: "org"
+
+jobs:
+  # Capture IssueOps inputs
+  initialize:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'issueops') || github.event_name == 'workflow_dispatch'
+    outputs:
+      defaultTeams:       ${{ env.DEFAULT_TEAMS }}
+      repoName:           ${{ steps.set-inputs.outputs.repoName }}
+      envName:            ${{ steps.set-inputs.outputs.envName }}
+      templateRepo:       ${{ steps.set-inputs.outputs.templateRepo }}
+      teams:              ${{ steps.set-inputs.outputs.teams }}
+      enableIssue:        ${{ steps.set-inputs.outputs.enableIssue }}
+      enableProject:      ${{ steps.set-inputs.outputs.enableProject }}
+      enableSquashMerge:  ${{ steps.set-inputs.outputs.enableSquashMerge }}
+      privateRepo:        ${{ steps.set-inputs.outputs.privateRepo }}
+    steps:
+    
+      - name: Debug context
+        uses: actions/github-script@v5
+        with:
+          script: |
+            console.log(context)
+            console.log(context.payload.issue.assignees)
+            console.log(context.payload.issue.labels)
+            console.log(context.payload.repository.topics)
+            
+      - name: Set inputs and add milestone
+        id: set-inputs
+        uses: actions/github-script@v5
+        with:
+          script: |
+            if ( github.event_name == 'workflow_dispatch' ) {
+              core.setOutput('repoName', "${{ inputs.repoName }}")
+              core.setOutput('envName', context.payload.organization.login)
+              core.setOutput('templateRepo', "${{ inputs.templateRepo }}")
+              core.setOutput('teams', "${{ inputs.teams }}")
+              core.setOutput('enableIssue', "false")
+              core.setOutput('enableProject', "false")
+              core.setOutput('enableSquashMerge', "false")
+              core.setOutput('privateRepo', "${{ inputs.privateRepo }}")
+            } else if ( github.event_name == 'issues' ) {
+              bodySplit = context.payload.issue.body.split(/\r?\n/)
+              // Set vars for this step
+              let repoName = bodySplit[2]
+              let templateRepo = bodySplit[6]
+              let teams = bodySplit[10]
+              let enableIssue = bodySplit[14].includes("X")
+              let enableProject = bodySplit[18].includes("X")
+              let enableSquashMerge = bodySplit[22].includes("X")
+              let privateRepo = bodySplit[26].includes("X")
+              // Set vars for subsequent steps
+              core.setOutput('repoName', repoName)
+              core.setOutput('envName', context.payload.organization.login)
+              core.setOutput('templateRepo', templateRepo)
+              core.setOutput('teams', teams)
+              core.setOutput('enableIssue', enableIssue)
+              core.setOutput('enableProject', enableProject)
+              core.setOutput('enableSquashMerge', enableSquashMerge)
+              core.setOutput('privateRepo', privateRepo)
+              // DON'T PRINT/USE ANYTHING UNTRUSTED UNTIL AFTER INPUTS ARE VALIDATED & FORMATTED
+              // https://securitylab.github.com/research/github-actions-untrusted-input/
+
+              console.log("Commenting on issue #" + context.issue.number + ": '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'The [[' + context.workflow + ' #' + context.runNumber + '](' + context.payload.repository.html_url + '/actions/runs/' + context.runId + ')] workflow has picked up this issue'
+              }).then((res) => {
+                core.startGroup(`Comment added to issue. Link: ${res.data.html_url}`)
+                console.log(res)
+                core.endGroup()
+              }).catch((err) => {
+                core.setFailed(`Action failed with error ${err}`)
+              })
+
+              console.log("Adding issue #" + context.issue.number + " to Milestone ID: [${{ env.ISSUEOPS_MILESTONE }}]")
+              await github.rest.issues.update({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                milestone: ${{ env.ISSUEOPS_MILESTONE }}
+              }).then((res) => {
+                core.startGroup(`Issue added to milestone [${res.data.milestone.title}]. Link: ${res.data.milestone.html_url}`)
+                console.log(res)
+                core.endGroup()
+              }).catch((err) => {
+                core.setFailed(`Action failed with error ${err}`)
+              })
+
+              /* GitHub Apps don't have repo write access and can't comment on a locked issue
+              console.log("Locking issue #" + context.issue.number + ": '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
+              await github.rest.issues.lock({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              }).then((res) => {
+                core.startGroup(`Issue locked.`)
+                console.log(res)
+                core.endGroup()
+              }).catch((err) => {
+                core.setFailed(`Action failed with error ${err}`)
+              })
+              */
+            }
+
+  # debug:
+  #   if: contains(github.event.issue.labels.*.name, 'issueops:create-repo')
+  #   needs: initialize
+  #   runs-on: ubuntu-latest
+  #   steps:
+        
+  #   - name: Validate job outputs
+  #     run: |
+  #       echo "repoName: [${{ needs.initialize.outputs.repoName }}]"
+  #       echo "envName: [${{ needs.initialize.outputs.envName }}]"
+  #       echo "templateRepo: [${{ needs.initialize.outputs.templateRepo }}]"
+  #       echo "teams: [${{ needs.initialize.outputs.teams }}]"
+  #       echo "enableIssue: [${{ needs.initialize.outputs.enableIssue }}]"
+  #       echo "enableProject: [${{ needs.initialize.outputs.enableProject }}]"
+  #       echo "enableSquashMerge: [${{ needs.initialize.outputs.enableSquashMerge }}]"
+  #       echo "privateRepo: [${{ needs.initialize.outputs.privateRepo }}]"
+
+  # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
+  reuse-validate-inputs:
+    uses: ci-cd-scripts/self-service/.github/workflows/validate-inputs.yml@main
+    if: contains(github.event.issue.labels.*.name, 'issueops') || github.event_name == 'workflow_dispatch'
+    needs: initialize
+    with:
+      defaultTeams:       ${{ needs.initialize.outputs.defaultTeams }}
+      repoName:           ${{ needs.initialize.outputs.repoName }}
+      envName:            ${{ needs.initialize.outputs.envName }}
+      templateRepo:       ${{ needs.initialize.outputs.templateRepo }}
+      teams:              ${{ needs.initialize.outputs.teams }}
+      enableIssue:        ${{ needs.initialize.outputs.enableIssue }}
+      enableProject:      ${{ needs.initialize.outputs.enableProject }}
+      enableSquashMerge:  ${{ needs.initialize.outputs.enableSquashMerge }}
+      privateRepo:        ${{ needs.initialize.outputs.privateRepo }}
+    secrets:
+      app-issueops-pem: ${{ secrets.APP_ISSUEOPS_PEM }}
+      app-issueops-id: ${{ secrets.APP_ISSUEOPS_ID }}
+
+  reuse-create-repo:
+    uses: ci-cd-scripts/self-service/.github/workflows/create-repo.yml@main
+    if: contains(github.event.issue.labels.*.name, 'issueops:create-repo') || github.event_name == 'workflow_dispatch'
+    needs: [reuse-validate-inputs]
+    with:
+      params: ${{ needs.reuse-validate-inputs.outputs.params }}
+    secrets:
+      caller-token: ${{ secrets.ORG_TOKEN }}
+
+  reuse-configure-repo:
+    uses: ci-cd-scripts/self-service/.github/workflows/configure-repo.yml@main
+    if: contains(github.event.issue.labels.*.name, 'issueops:configure-repo') || github.event_name == 'workflow_dispatch'
+    needs: [reuse-validate-inputs, reuse-create-repo]
+    with:
+      params: ${{ needs.reuse-validate-inputs.outputs.params }}
+    secrets:
+      caller-token: ${{ secrets.ORG_TOKEN }}
