@@ -10,7 +10,7 @@ on:
       templateRepo:
         description: 'Template repo to use'
         required: false
-        default: string
+        default: 'sample-template-repository-universe'
       teams:
         description: 'Comma-separated list of teams'
         required: true
