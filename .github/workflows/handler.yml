@@ -48,9 +48,6 @@ jobs:
         with:
           script: |
             console.log(context)
-            console.log(context.payload.issue.assignees)
-            console.log(context.payload.issue.labels)
-            console.log(context.payload.repository.topics)
             
       - name: Set inputs and add milestone
         id: set-inputs
