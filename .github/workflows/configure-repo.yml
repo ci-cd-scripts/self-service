@@ -115,6 +115,15 @@ jobs:
               })
             }
             
+      - name: Configure GitHub repo
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.caller-token }}
+          script: |
+            // Set vars for this step
+            let repoName = "${{ fromJSON(inputs.params).repoName }}"
+            
             console.log("Commenting on issue '" + context.payload.issue.title + "' - " + context.payload.issue.html_url)
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
